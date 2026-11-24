@@ -1,7 +1,7 @@
 {
   "game": "aom",
   "ok": true,
-  "fetchedAt": "2026-11-24T08:27:54.732Z",
+  "fetchedAt": "2026-11-24T08:38:54.653Z",
   "player": {
     "name": "Oni.Forkxx",
     "id": "1073742995",
@@ -26,7 +26,7 @@
       "label": "1v1 Supremacy",
       "rating": 1399,
       "peak": 1412,
-      "rank": 905,
+      "rank": 906,
       "tier": null,
       "wins": 179,
       "losses": 171,
