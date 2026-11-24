@@ -2,7 +2,7 @@
 // Dados: MMR por raça no 1v1 da temporada atual. Peak/histórico vêm do nosso próprio history.json.
 const BASE = 'https://website-backend.w3champions.com/api';
 const RACES = { 0: 'Random', 1: 'Human', 2: 'Orc', 4: 'Night Elf', 8: 'Undead' };
-const GATEWAYS = [20, 10, 30]; // Europa, Américas, Ásia
+const GATEWAYS = [20, 10]; // Europa, Américas (gateway 30 responde 400)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function get(path) {
@@ -10,11 +10,16 @@ async function get(path) {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const res = await fetch(BASE + path, { headers: { 'User-Agent': 'rankeds/0.1 (github.com/forkxx/rankeds)', Accept: 'application/json' }, signal: AbortSignal.timeout(20000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status} em ${path.split('?')[0]}`);
+      if (!res.ok) {
+        const e = new Error(`HTTP ${res.status} em ${path.split('?')[0]}`);
+        if (res.status >= 400 && res.status < 500) e.noRetry = true;
+        throw e;
+      }
       const text = await res.text();
       return text ? JSON.parse(text) : null;
     } catch (e) {
       lastErr = e;
+      if (e.noRetry) break;
       if (attempt < 3) await sleep(1000 * attempt * attempt);
     }
   }
@@ -33,7 +38,12 @@ export async function fetchGame(cfg) {
   let usedSeason = null;
   for (const season of [latest, latest - 1]) {
     for (const gw of GATEWAYS) {
-      const data = (await get(`/players/${enc}/game-mode-stats?gateway=${gw}&season=${season}`)) ?? [];
+      let data = [];
+      try {
+        data = (await get(`/players/${enc}/game-mode-stats?gateway=${gw}&season=${season}`)) ?? [];
+      } catch (e) {
+        console.warn(`[wc3] gateway ${gw} temporada ${season}: ${e.message}`);
+      }
       const solo = data.filter((r) => r.gameMode === 1 && r.race in RACES && r.games > 0);
       rows.push(...solo);
     }
