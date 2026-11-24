@@ -1,6 +1,6 @@
 # Rankeds — instruções para o Claude
 
-Site estático (GitHub Pages) que acompanha minha evolução competitiva em AoE2, Warcraft 3, Age of Mythology, Legion TD 2, Chess.com e outros jogos.
+Site estático (GitHub Pages) que acompanha minha evolução competitiva em AoE2, Warcraft 3, Age of Mythology, Chess.com e outros jogos.
 URL: https://forkxx.github.io/rankeds/
 
 ## Arquitetura (fixa)

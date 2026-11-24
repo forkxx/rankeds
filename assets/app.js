@@ -7,7 +7,7 @@ const GAMES = [
 ];
 const DAY = 86400000;
 const $app = document.getElementById('app');
-const state = { meta: null, data: {}, range: 30, mode: null };
+const state = { meta: null, data: {}, range: 30, mode: null, hrange: 90 };
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nf = new Intl.NumberFormat('pt-BR');
@@ -94,6 +94,49 @@ function card(g) {
     <div class="cf"><span>Pico <b>${mode.peak != null ? nf.format(mode.peak) : '—'}</b></span><span>Winrate <b>${wr}</b></span><span>${ago(cur.fetchedAt)}</span></div></a>`;
 }
 
+
+const DASH = { chess: '', aoe2: '7 4', wc3: '2 4', aom: '10 3 2 3' };
+
+function combined() {
+  const games = GAMES.filter((g) => state.data[g.id]?.current).map((g) => {
+    const d = state.data[g.id], m = pickMode(d.current), all = toPts(d.history[m.id]);
+    return { g, m, all };
+  });
+  if (!games.length) return '';
+  const tMax = Math.max(...games.map((x) => (x.all.length ? x.all[x.all.length - 1].t : 0)));
+  const cutoff = state.hrange === 0 ? -Infinity : tMax - state.hrange * DAY;
+  const lines = [], waiting = [];
+  for (const x of games) {
+    const inWin = x.all.filter((p) => p.t >= cutoff);
+    if (inWin.length < 2) { waiting.push(x); continue; }
+    const before = x.all.filter((p) => p.t <= cutoff).pop();
+    const base = (before ?? inWin[0]).v;
+    lines.push({ ...x, pts: inWin.map((p) => ({ t: p.t, v: p.v - base })), end: inWin[inWin.length - 1].v - base });
+  }
+  const W = 800, H = 280, L = 48, R = 780, T = 20, B = 240;
+  let svg = '<div class="empty">Ainda não há pontos suficientes neste período. O gráfico se completa a cada coleta.</div>';
+  if (lines.length) {
+    const allPts = lines.flatMap((l) => l.pts);
+    const t0 = Math.min(...allPts.map((p) => p.t)), t1 = Math.max(...allPts.map((p) => p.t));
+    let lo = Math.min(0, ...allPts.map((p) => p.v)), hi = Math.max(0, ...allPts.map((p) => p.v));
+    const pad = Math.max(10, (hi - lo) * 0.12);
+    lo = Math.floor((lo - pad) / 10) * 10; hi = Math.ceil((hi + pad) / 10) * 10;
+    const X = (t) => (t1 === t0 ? (L + R) / 2 : L + ((t - t0) / (t1 - t0)) * (R - L));
+    const Y = (v) => B - ((v - lo) / (hi - lo)) * (B - T);
+    const grid = [0, 1, 2, 3, 4].map((i) => { const v = lo + ((hi - lo) * i) / 4; return `<line x1="${L}" y1="${Y(v)}" x2="${R}" y2="${Y(v)}" stroke="#232A33"/><text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end" fill="#9AA4B2" font-size="12">${v > 0 ? '+' : ''}${Math.round(v)}</text>`; }).join('');
+    const zero = `<line x1="${L}" y1="${Y(0)}" x2="${R}" y2="${Y(0)}" stroke="#3A4452" stroke-width="1.5"/>`;
+    const xl = [0, 1 / 3, 2 / 3, 1].map((f, i) => { const t = t0 + (t1 - t0) * f; return `<text x="${X(t)}" y="264" text-anchor="${i === 0 ? 'start' : i === 3 ? 'end' : 'middle'}" fill="#9AA4B2" font-size="12">${shortDate(t)}</text>`; }).join('');
+    const paths = lines.map((l) => `<polyline points="${l.pts.map((p) => `${X(p.t).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ')}" fill="none" stroke="${l.g.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" ${DASH[l.g.id] ? `stroke-dasharray="${DASH[l.g.id]}"` : ''}/><circle cx="${X(l.pts[l.pts.length - 1].t).toFixed(1)}" cy="${Y(l.pts[l.pts.length - 1].v).toFixed(1)}" r="4.5" fill="${l.g.color}"/>`).join('');
+    svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;font-family:Inter,sans-serif" role="img" aria-label="Variação de rating de cada jogo no período, em pontos desde o início">${grid}${zero}${xl}${paths}</svg>`;
+  }
+  const legend = lines.map((l) => { const c = l.end > 0 ? 'up' : l.end < 0 ? 'down' : 'flat'; const tx = l.end > 0 ? `▲ +${l.end}` : l.end < 0 ? `▼ −${Math.abs(l.end)}` : '＝ 0'; return `<li><svg width="30" height="10" aria-hidden="true"><line x1="1" y1="5" x2="29" y2="5" stroke="${l.g.color}" stroke-width="3" stroke-linecap="round" ${DASH[l.g.id] ? `stroke-dasharray="${DASH[l.g.id]}"` : ''}/></svg><span>${esc(l.g.name)} <small>${esc(l.m.label)}</small></span><b class="${c}">${tx}</b></li>`; }).join('')
+    + waiting.map((x) => `<li class="wait"><svg width="30" height="10" aria-hidden="true"><line x1="1" y1="5" x2="29" y2="5" stroke="${x.g.color}" stroke-width="3" stroke-linecap="round" opacity=".4"/></svg><span>${esc(x.g.name)} <small>${esc(x.m.label)}</small></span><b class="flat">coletando histórico</b></li>`).join('');
+  const ranges = [[30, '30d'], [90, '90d'], [365, '1 ano'], [0, 'Tudo']];
+  return `<section class="panel"><div class="hd"><h2>Evolução combinada</h2><div class="btns">${ranges.map(([v, l]) => `<button class="btn" data-hrange="${v}" aria-pressed="${state.hrange === v}" ${state.hrange === v ? 'style="background:#232A33;border-color:#3A4452"' : ''}>${l}</button>`).join('')}</div></div>
+    ${svg}<ul class="legend">${legend}</ul>
+    <span class="note">Cada linha mostra quantos pontos o rating principal do jogo subiu ou caiu desde o início do período, para comparar jogos com escalas diferentes.</span></section>`;
+}
+
 function home() {
   const withData = GAMES.filter((g) => state.data[g.id]?.current);
   let ups = 0, downs = 0;
@@ -108,6 +151,7 @@ function home() {
       <div class="tile"><span class="l">Em alta</span><span class="num up">▲ ${ups}</span></div>
       <div class="tile"><span class="l">Em queda</span><span class="num down">▼ ${downs}</span></div>
     </section>
+    ${combined()}
     <section><div class="grid">${GAMES.map(card).join('')}</div></section>`;
 }
 
@@ -175,8 +219,9 @@ function render() {
 }
 
 $app.addEventListener('click', (e) => {
-  const b = e.target.closest('button[data-mode],button[data-range]');
+  const b = e.target.closest('button[data-mode],button[data-range],button[data-hrange]');
   if (!b) return;
+  if (b.dataset.hrange) state.hrange = Number(b.dataset.hrange);
   if (b.dataset.mode) state.mode = b.dataset.mode;
   if (b.dataset.range) state.range = Number(b.dataset.range);
   render();

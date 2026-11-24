@@ -47,3 +47,8 @@ th{text-align:left;color:var(--muted);font-size:12px;font-weight:500;padding:14p
 td{padding:14px 22px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
 .r{text-align:right}
 .foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted)}
+
+.legend{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:10px 28px}
+.legend li{display:flex;align-items:center;gap:10px;font-size:14px}
+.legend small{color:var(--muted)}
+.legend li.wait span{color:var(--muted)}
