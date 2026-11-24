@@ -2,8 +2,9 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import * as chess from './adapters/chess.mjs';
 import * as aoe2 from './adapters/aoe2.mjs';
+import * as wc3 from './adapters/wc3.mjs';
 
-const ADAPTERS = { chess, aoe2 };
+const ADAPTERS = { chess, aoe2, wc3 };
 
 const readJSON = async (p, fallback) => {
   try { return JSON.parse(await readFile(p, 'utf8')); } catch { return fallback; }
