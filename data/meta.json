@@ -1,19 +1,17 @@
 {
-  "generatedAt": "2026-11-24T07:32:43.254Z",
+  "generatedAt": "2026-11-24T07:35:21.556Z",
   "games": {
     "chess": {
       "ok": true,
-      "fetchedAt": "2026-11-24T07:32:43.254Z"
+      "fetchedAt": "2026-11-24T07:35:21.556Z"
     },
     "aoe2": {
       "ok": true,
-      "fetchedAt": "2026-11-24T07:32:43.254Z"
+      "fetchedAt": "2026-11-24T07:35:21.556Z"
     },
     "wc3": {
-      "ok": false,
-      "error": "HTTP 400 em /players/Forkxx%231480/game-mode-stats",
-      "fetchedAt": "2026-11-24T07:32:43.254Z",
-      "lastSuccessAt": null
+      "ok": true,
+      "fetchedAt": "2026-11-24T07:35:21.556Z"
     }
   }
 }

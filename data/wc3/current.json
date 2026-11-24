@@ -1,0 +1,51 @@
+{
+  "game": "wc3",
+  "ok": true,
+  "fetchedAt": "2026-11-24T07:35:23.385Z",
+  "player": {
+    "name": "Forkxx",
+    "id": "Forkxx#1480",
+    "profileUrl": "https://www.w3champions.com/player/Forkxx%231480",
+    "avatar": null
+  },
+  "season": 25,
+  "modes": [
+    {
+      "id": "1v1_human",
+      "label": "1v1 Human",
+      "rating": 1588,
+      "peak": null,
+      "rank": 57,
+      "tier": null,
+      "wins": 24,
+      "losses": 28,
+      "draws": null,
+      "lastGameAt": null
+    },
+    {
+      "id": "1v1_orc",
+      "label": "1v1 Orc",
+      "rating": 1516,
+      "peak": null,
+      "rank": 21,
+      "tier": null,
+      "wins": 31,
+      "losses": 35,
+      "draws": null,
+      "lastGameAt": null
+    },
+    {
+      "id": "1v1_nightelf",
+      "label": "1v1 Night Elf",
+      "rating": 1486,
+      "peak": null,
+      "rank": 88,
+      "tier": null,
+      "wins": 16,
+      "losses": 19,
+      "draws": null,
+      "lastGameAt": null
+    }
+  ],
+  "recent": []
+}
