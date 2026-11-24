@@ -3,8 +3,7 @@ const GAMES = [
   { id: 'chess', name: 'Chess.com', color: '#7FB23B', source: 'Chess.com PubAPI' },
   { id: 'aoe2', name: 'Age of Empires II', color: '#E0A030', source: 'API da Worlds Edge' },
   { id: 'wc3', name: 'Warcraft III', color: '#4A8FE7', source: 'W3Champions' },
-  { id: 'aom', name: 'Age of Mythology', color: '#2FB8A6' },
-  { id: 'ltd2', name: 'Legion TD 2', color: '#9B7BF0' },
+  { id: 'aom', name: 'Age of Mythology', color: '#2FB8A6', source: 'aomstats.io' },
 ];
 const DAY = 86400000;
 const $app = document.getElementById('app');
