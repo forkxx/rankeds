@@ -14,11 +14,11 @@
       "1v1_random",
       "1v1_human",
       "1v1_orc",
-      "1v1_nightelf"
+      "1v1_nightelf",
+      "1v1_undead"
     ],
     "aom": [
-      "1v1",
-      "team"
+      "1v1"
     ]
   },
   "icons": {

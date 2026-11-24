@@ -329,6 +329,7 @@ function render() {
   const prevKey = state.lastKey;
   const m = location.hash.match(/^#\/(\w+)/);
   const route = m ? m[1] : 'home';
+  if (location.hash !== state.lastHash) { const mm = location.hash.match(/^#\/\w+\/(\w+)/); if (mm) state.mode = mm[1]; state.lastHash = location.hash; }
   const navKey = ['metas', 'analises', 'cartao'].includes(route) ? route : 'home';
   document.querySelectorAll('[data-nav]').forEach((a) => (a.dataset.nav === navKey ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
   if (route === 'metas') goalsPage(); else if (route === 'analises') analysisPage(); else if (route === 'cartao') cardPage(); else if (m) detail(m[1]); else home();

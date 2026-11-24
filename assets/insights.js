@@ -511,26 +511,30 @@ function bigSpark(pts, color, w = 360, h = 110) {
   return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;max-width:${w}px;height:auto" aria-hidden="true"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".4"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><path d="${line} L${w},${h} L0,${h} Z" fill="url(#${gid})"/><path d="${line}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 function homeScore() {
-  const rows = GAMES.map((g) => {
+  const rows = GAMES.flatMap((g) => {
     const d = state.data[g.id], cur = d?.current;
-    if (!cur) return `<div class="srow2 off"><div class="sg">${icon(g.id, 30)}<div><b>${esc(g.name)}</b><small>Sem dados ainda</small></div></div></div>`;
-    const m = pickMode(cur), pts = toPts(d.history[m.id]), dv = deltaView(delta(pts, 30), 30);
-    const n = (m.wins ?? 0) + (m.losses ?? 0) + (m.draws ?? 0), wr = n ? Math.round(((m.wins ?? 0) / n) * 100) + '%' : '—';
-    const pk = peakOf(m, pts), dist = pk - m.rating;
-    const sp = pts.slice(-30);
-    let spk = '<span class="note">coletando…</span>';
-    if (sp.length > 1) {
-      const vs = sp.map((x) => x.v), mn = Math.min(...vs), mx = Math.max(...vs);
-      spk = `<svg viewBox="0 0 150 36" width="150" height="36" aria-hidden="true"><polyline points="${sp.map((x, i) => `${((i * 150) / (sp.length - 1)).toFixed(1)},${(32 - ((x.v - mn) / (mx - mn || 1)) * 28).toFixed(1)}`).join(' ')}" fill="none" stroke="${g.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-    }
-    return `<a class="srow2 gc" href="#/${g.id}" style="--gc:${g.color}"><div class="sg">${icon(g.id, 30)}<div><b>${esc(g.name)}</b><small>${esc(m.label)}</small></div></div>
-      <div class="num sr" data-count="${m.rating}">${nf.format(m.rating)}</div>
-      <div class="dl ${dv.cls}">${dv.txt} <span>${dv.sub}</span></div>
-      <div class="sk2">${spk}</div>
-      <div class="sm">Winrate<b>${wr}</b></div>
-      <div class="sm">Do pico<b>${dist > 0 ? '−' + nf.format(dist) : 'no pico'}</b></div></a>`;
+    if (!cur) return [`<div class="srow2 off"><div class="sg">${icon(g.id, 30)}<div><b>${esc(g.name)}</b><small>Sem dados ainda</small></div></div></div>`];
+    const modes = featuredModes(cur);
+    return modes.map((m, idx) => {
+      const pts = toPts(d.history[m.id]), dv = deltaView(delta(pts, 30), 30);
+      const n = (m.wins ?? 0) + (m.losses ?? 0) + (m.draws ?? 0), wr = n ? Math.round(((m.wins ?? 0) / n) * 100) + '%' : '—';
+      const pk = peakOf(m, pts), dist = pk - m.rating;
+      const sp = pts.slice(-30);
+      let spk = '<span class="note">coletando…</span>';
+      if (sp.length > 1) {
+        const vs = sp.map((x) => x.v), mn = Math.min(...vs), mx = Math.max(...vs);
+        spk = `<svg viewBox="0 0 150 36" width="150" height="36" aria-hidden="true"><polyline points="${sp.map((x, k) => `${((k * 150) / (sp.length - 1)).toFixed(1)},${(32 - ((x.v - mn) / (mx - mn || 1)) * 28).toFixed(1)}`).join(' ')}" fill="none" stroke="${g.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      }
+      const first = idx === 0;
+      return `<a class="srow2 gc${first ? ' gfirst' : ''}" href="#/${g.id}/${m.id}" style="--gc:${g.color}"><div class="sg">${icon(g.id, 30)}<div><b>${esc(m.label)}</b><small>${esc(g.name)}${m.stale ? ' · temporada anterior' : ''}</small></div></div>
+        <div class="num sr" data-count="${m.rating}">${nf.format(m.rating)}</div>
+        <div class="dl ${dv.cls}">${dv.txt} <span>${dv.sub}</span></div>
+        <div class="sk2">${spk}</div>
+        <div class="sm">Winrate<b>${wr}</b></div>
+        <div class="sm">Do pico<b>${dist > 0 ? '−' + nf.format(dist) : 'no pico'}</b></div></a>`;
+    });
   }).join('');
-  return `<div class="panel scorep"><div class="shead"><span>Jogo</span><span>Rating</span><span>30 dias</span><span>Tendência</span><span></span><span></span></div>${rows}</div>`;
+  return `<div class="panel scorep"><div class="shead"><span>Jogo · modo</span><span>Rating</span><span>30 dias</span><span>Tendência</span><span></span><span></span></div>${rows}</div>`;
 }
 function homeGoals() {
   const ev = (state.goals || []).map(evalGoal).filter((e) => e.status !== 'nodata');
