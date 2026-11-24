@@ -1,8 +1,8 @@
 'use strict';
 const GAMES = [
-  { id: 'chess', name: 'Chess.com', color: '#7FB23B' },
-  { id: 'aoe2', name: 'Age of Empires II', color: '#E0A030' },
-  { id: 'wc3', name: 'Warcraft III', color: '#4A8FE7' },
+  { id: 'chess', name: 'Chess.com', color: '#7FB23B', source: 'Chess.com PubAPI' },
+  { id: 'aoe2', name: 'Age of Empires II', color: '#E0A030', source: 'API da Worlds Edge' },
+  { id: 'wc3', name: 'Warcraft III', color: '#4A8FE7', source: 'W3Champions' },
   { id: 'aom', name: 'Age of Mythology', color: '#2FB8A6' },
   { id: 'ltd2', name: 'Legion TD 2', color: '#9B7BF0' },
 ];
@@ -166,7 +166,7 @@ function detail(id) {
     </section>
     <section style="display:flex;flex-direction:column;gap:14px"><h2>Partidas recentes</h2>
       ${recent.length ? `<div class="tbl"><table><thead><tr><th>Data</th><th>Resultado</th><th>Oponente</th><th class="r">Rating após</th></tr></thead><tbody>${recent.map((r) => { const [t, c] = RESULT[r.result] || ['—', 'flat']; return `<tr><td class="flat">${new Date(r.playedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')}</td><td class="${c}" style="font-weight:600">${t}</td><td>${esc(r.opponent)}</td><td class="r">${r.ratingAfter ?? '—'}</td></tr>`; }).join('')}</tbody></table></div>` : '<div class="empty">Sem partidas recentes neste modo.</div>'}
-      <div class="cf" style="border:0;padding:0"><span>Fonte: Chess.com PubAPI · coletado ${ago(cur.fetchedAt)}</span>${cur.player?.profileUrl ? `<a href="${esc(cur.player.profileUrl)}" rel="noopener" style="color:var(--text);text-decoration:underline">Abrir perfil no Chess.com</a>` : ''}</div></section>`;
+      <div class="cf" style="border:0;padding:0"><span>Fonte: ${esc(g.source || g.name)} · coletado ${ago(cur.fetchedAt)}</span>${cur.player?.profileUrl ? `<a href="${esc(cur.player.profileUrl)}" rel="noopener" style="color:var(--text);text-decoration:underline">Abrir perfil</a>` : ''}</div></section>`;
 }
 
 function render() {
