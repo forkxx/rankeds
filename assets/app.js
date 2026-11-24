@@ -7,7 +7,7 @@ const GAMES = [
 ];
 const DAY = 86400000;
 const $app = document.getElementById('app');
-const state = { meta: null, data: {}, range: 30, mode: null, hrange: 90, goals: [], display: null, afilter: 'all', tlAll: false };
+const state = { meta: null, data: {}, range: 30, mode: null, hrange: 90, goals: [], display: null, afilter: 'all', tlAll: false, irange: 90 };
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nf = new Intl.NumberFormat('pt-BR');

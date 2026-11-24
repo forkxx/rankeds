@@ -320,10 +320,80 @@ async function downloadCard() {
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svg));
 }
 
+// ---- Sessões de jogo (partidas separadas por menos de 60 min formam uma sessão) ----
+function sessionsData() {
+  const all = (state.afilter === 'all' ? GAMES : [gameOf(state.afilter)]).flatMap((g) => matchesOf(g.id).map((m) => ({ ...m, g: g.id }))).sort((a, b) => a.t.localeCompare(b.t));
+  const GAP = 60 * 60000, out = [];
+  let cur = null;
+  for (const m of all) {
+    const t = Date.parse(m.t);
+    if (!cur || t - cur.end > GAP) { cur = { start: t, end: t, ms: [] }; out.push(cur); }
+    cur.end = t; cur.ms.push(m);
+  }
+  return out.map((x) => {
+    const w = x.ms.filter((m) => m.result === 'win').length, withPts = x.ms.filter((m) => m.delta != null);
+    return { ...x, n: x.ms.length, w, l: x.ms.length - w, pts: withPts.reduce((a, m) => a + m.delta, 0), hasPts: withPts.length > 0, games: [...new Set(x.ms.map((m) => m.g))], dur: x.end - x.start };
+  });
+}
+const fmtDur = (ms) => (ms < 60000 ? '—' : ms < 3600000 ? `${Math.round(ms / 60000)} min` : `${Math.floor(ms / 3600000)} h ${String(Math.round((ms % 3600000) / 60000)).padStart(2, '0')}`);
+function sessions() {
+  const all = sessionsData(), since = Date.now() - 30 * DAY, recent = all.filter((x) => x.end >= since);
+  const scored = recent.filter((x) => x.hasPts);
+  const best = scored.length ? scored.reduce((a, b) => (b.pts > a.pts ? b : a)) : null, worst = scored.length ? scored.reduce((a, b) => (b.pts < a.pts ? b : a)) : null;
+  const avgN = recent.length ? Math.round((recent.reduce((a, x) => a + x.n, 0) / recent.length) * 10) / 10 : null;
+  const avgPts = scored.length ? Math.round(scored.reduce((a, x) => a + x.pts, 0) / scored.length) : null;
+  const tile = (l, v, sub, c = '') => `<div class="tile"><span class="l">${l}</span><span class="num ${c}">${v}</span><span class="l">${sub}</span></div>`;
+  const rows = [...all].reverse().slice(0, 8).map((x) => {
+    const d = new Date(x.start), e = new Date(x.end), hm = (z) => z.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return `<tr><td>${d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }).replace(/\./g, '')}</td><td class="flat">${hm(d)}${x.n > 1 ? '–' + hm(e) : ''}</td><td><span style="display:inline-flex;gap:4px">${x.games.map((g) => icon(g, 18)).join('')}</span></td><td>${x.n} <span class="flat">(${x.w}V · ${x.l}D)</span></td><td class="flat">${fmtDur(x.dur)}</td><td class="r ${x.hasPts ? cls(x.pts) : 'flat'}" style="font-weight:600">${x.hasPts ? (x.pts > 0 ? '+' : x.pts < 0 ? '−' : '') + Math.abs(x.pts) : '—'}</td></tr>`;
+  }).join('');
+  return `<section class="panel"><div class="hd"><h2>Sessões de jogo</h2><span class="note">partidas com menos de 60 min entre si formam uma sessão</span></div>
+    <div class="tiles">${tile('Sessões em 30 dias', nf.format(recent.length), 'no filtro atual')}${tile('Partidas por sessão', avgN ?? '—', 'média dos últimos 30 dias')}${tile('Saldo médio', avgPts == null ? '—' : (avgPts > 0 ? '+' : avgPts < 0 ? '−' : '') + Math.abs(avgPts), 'pontos por sessão', avgPts == null ? '' : cls(avgPts))}${tile('Melhor / pior sessão', best ? `<span class="up">+${best.pts}</span> <span class="flat" style="font-size:24px">/</span> <span class="${worst.pts < 0 ? 'down' : 'flat'}">${worst.pts < 0 ? '−' + Math.abs(worst.pts) : worst.pts}</span>` : '—', 'saldo de pontos')}</div>
+    ${rows ? `<div class="tbl"><table><thead><tr><th>Dia</th><th>Horário</th><th>Jogos</th><th>Partidas</th><th>Duração aprox.</th><th class="r">Saldo</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty">Ainda não há partidas para formar sessões.</div>'}
+    <span class="note">A duração vai da primeira à última partida registrada na sessão. O saldo soma a variação de rating onde a fonte informa (o AoE2 não informa, aparece “—”).</span></section>`;
+}
+
+// ---- Índice de evolução (0–100 entre o pior e o melhor rating de cada jogo) ----
+function indexLines() {
+  const out = [];
+  for (const g of GAMES) {
+    const d = state.data[g.id]; if (!d?.current) continue;
+    const m = mainModeOf(d.current); if (!m) continue;
+    const pts = toPts(d.history[m.id]);
+    const vs = pts.map((p) => p.v), min = Math.min(...vs, m.rating), max = Math.max(...vs, m.rating);
+    out.push({ g, m, pts: max > min ? pts.map((p) => ({ t: p.t, v: Math.round(((p.v - min) / (max - min)) * 100) })) : [], now: max > min ? Math.round(((m.rating - min) / (max - min)) * 100) : null });
+  }
+  return out;
+}
+function indexPanel() {
+  const lines = indexLines(), tEnd = Math.max(0, ...lines.flatMap((l) => (l.pts.length ? [l.pts[l.pts.length - 1].t] : [])));
+  const cut = state.irange === 0 ? -Infinity : tEnd - state.irange * DAY;
+  const shown = lines.map((l) => ({ ...l, w: l.pts.filter((p) => p.t >= cut) })).filter((l) => l.w.length >= 2);
+  const shownIds = new Set(shown.map((x) => x.g.id));
+  const waiting = lines.filter((l) => !shownIds.has(l.g.id));
+  const W = 800, H = 270, L0 = 48, R0 = 780, T0 = 16, B0 = 230;
+  let svg = '<div class="empty">Ainda não há pontos suficientes neste período.</div>';
+  if (shown.length) {
+    const t0 = Math.min(...shown.map((l) => l.w[0].t)), t1 = Math.max(...shown.map((l) => l.w[l.w.length - 1].t));
+    const X = (t) => (t1 === t0 ? (L0 + R0) / 2 : L0 + ((t - t0) / (t1 - t0)) * (R0 - L0)), Y = (v) => B0 - (v / 100) * (B0 - T0);
+    const grid = [0, 25, 50, 75, 100].map((v) => `<line x1="${L0}" y1="${Y(v)}" x2="${R0}" y2="${Y(v)}" stroke="#232A33"/><text x="${L0 - 8}" y="${Y(v) + 4}" text-anchor="end" fill="#9AA4B2" font-size="12">${v}</text>`).join('');
+    const xl = [0, 1 / 3, 2 / 3, 1].map((f, i) => { const t = t0 + (t1 - t0) * f; return `<text x="${X(t)}" y="256" text-anchor="${i === 0 ? 'start' : i === 3 ? 'end' : 'middle'}" fill="#9AA4B2" font-size="12">${shortDate(t)}</text>`; }).join('');
+    const paths = shown.map((l) => { const last = l.w[l.w.length - 1]; return `<polyline points="${l.w.map((p) => `${X(p.t).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ')}" fill="none" stroke="${l.g.color}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" ${DASH[l.g.id] ? `stroke-dasharray="${DASH[l.g.id]}"` : ''}/><circle cx="${X(last.t).toFixed(1)}" cy="${Y(last.v).toFixed(1)}" r="4.5" fill="${l.g.color}"/>`; }).join('');
+    svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;font-family:Inter,sans-serif" role="img" aria-label="Índice de evolução de 0 a 100 de cada jogo">${grid}${xl}${paths}</svg>`;
+  }
+  const leg = lines.map((l) => `<li>${icon(l.g.id, 20)}<span>${esc(l.g.name)} <small>${esc(l.m.label)}</small></span><b>${l.now == null ? 'coletando' : l.now}</b></li>`).join('');
+  const ranges = [[30, '30d'], [90, '90d'], [365, '1 ano'], [0, 'Tudo']];
+  return `<section class="panel"><div class="hd"><h2>Índice de evolução</h2><div class="btns">${ranges.map(([v, l]) => `<button class="btn" data-irange="${v}" aria-pressed="${state.irange === v}" ${state.irange === v ? 'style="background:#232A33;border-color:#3A4452"' : ''}>${l}</button>`).join('')}</div></div>
+    ${svg}<ul class="legend">${leg}</ul>
+    <span class="note">Índice = onde o rating está entre o pior (0) e o melhor (100) já registrado no modo principal do jogo. 100 = no seu pico. Serve para comparar jogos de escalas diferentes. Cada jogo usa o histórico que existe: ${waiting.length ? `${waiting.map((w) => w.g.name).join(', ')} ainda ${waiting.length > 1 ? 'têm' : 'tem'} poucos pontos neste período.` : 'todos têm dados no período.'}</span></section>`;
+}
+
 // ---- Página Análises ----
 function analysisPage() {
   $app.innerHTML = `<section><h1>Análises</h1><p class="lead">Padrões da sua atividade e do seu desempenho em todos os jogos.</p></section>
     ${calendar()}
+    ${sessions()}
+    ${indexPanel()}
     ${streaks()}
     <section class="row2">${peakList()}${percentileList()}</section>
     ${donut()}
@@ -333,6 +403,8 @@ function analysisPage() {
 $app.addEventListener('click', (e) => {
   const f = e.target.closest('[data-afilter]'), a = e.target.closest('[data-act]');
   if (f) { state.afilter = f.dataset.afilter; render(); }
+  const ir = e.target.closest('[data-irange]');
+  if (ir) { state.irange = Number(ir.dataset.irange); render(); }
   if (a?.dataset.act === 'tlmore') { state.tlAll = !state.tlAll; render(); }
   if (a?.dataset.act === 'dlcard') downloadCard();
 });
