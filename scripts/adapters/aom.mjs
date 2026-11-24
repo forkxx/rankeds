@@ -94,6 +94,21 @@ export function parse(json, id) {
       detail: null,
     }));
 
+  // Partidas normalizadas (a página traz só as ~20 mais recentes; o collect acumula ao longo do tempo).
+  const matches = (detail?.matches ?? []).filter((m) => MODE_OF[m.leaderboard_id] && m.completiontime).map((m) => ({
+    id: `aom:${m.match_id}`,
+    t: new Date(m.completiontime * 1000).toISOString(),
+    mode: MODE_OF[m.leaderboard_id],
+    result: m.win ? 'win' : 'loss',
+    rating: m.elo ?? null,
+    delta: m.elo_change ?? null,
+    map: m.mapname ? m.mapname.replace(/^rm_/, '').replace(/_/g, ' ') : null,
+    pick: m.god ?? null,
+    opp: null,
+  }));
+  // Desempenho por deus (acumulado de todas as partidas do aomstats).
+  const gods = (detail?.stats ?? []).filter((x) => x.god && Number(x.num_games) > 0).map((x) => ({ god: x.god, games: Number(x.num_games), wins: Number(x.num_wins) }));
+
   const p = lbNode.profile ?? {};
   return {
     current: {
@@ -103,8 +118,10 @@ export function parse(json, id) {
       player: { name: p.alias ?? String(id), id: String(id), profileUrl: `https://aomstats.io/profile/${id}`, avatar: p.avatar_link ?? null },
       modes,
       recent,
+      extras: { gods },
     },
     backfill,
+    matches,
   };
 }
 

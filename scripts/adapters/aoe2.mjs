@@ -1,7 +1,8 @@
 // Adapter do Age of Empires II: DE via API "community" da Worlds Edge (sem chave).
 // Validado em 24/11/2026 com profile_id 702248 (ver docs/samples/we-aoe2-personalstat.json).
 const BASE = 'https://aoe-api.worldsedgelink.com/community';
-const LEADERBOARDS = { 3: ['rm_1v1', '1v1 Random Map'], 4: ['rm_team', 'Team Random Map'], 9: ['ew_1v1', '1v1 Empire Wars'], 10: ['ew_team', 'Team Empire Wars'] };
+const LEADERBOARDS = { 3: ['rm_1v1', '1v1 Random Map'], 4: ['rm_team', 'Team Random Map'] };
+const pretty = (f) => String(f ?? '').replace(/\.rms$/i, '').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' ').trim() || null;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function get(path) {
@@ -39,9 +40,43 @@ export async function fetchGame(cfg) {
       losses: s.losses ?? null,
       draws: null,
       lastGameAt: s.lastmatchdate ? new Date(s.lastmatchdate * 1000).toISOString() : null,
+      rankTotal: s.ranktotal > 0 ? s.ranktotal : null,
     });
   }
   if (!modes.length) throw new Error('perfil sem ratings ranqueados');
+
+  // Partidas recentes (API getRecentMatchHistory). Só ranqueadas (AUTOMATCH); modo pelo número de jogadores.
+  // Atenção: heurística (2 jogadores = 1v1, mais = equipe). Rating por partida não vem nesta API.
+  let matches = null;
+  try {
+    const mh = await get(`/leaderboard/getRecentMatchHistory?title=age2&profile_ids=${encodeURIComponent(`[${id}]`)}`);
+    matches = [];
+    for (const m of mh?.matchHistoryStats ?? []) {
+      if (m.description !== 'AUTOMATCH') continue;
+      const rs = m.matchhistoryreportresults ?? [];
+      const me = rs.find((r) => r.profile_id === id);
+      if (!me || (me.resulttype !== 0 && me.resulttype !== 1)) continue;
+      const ts = m.completiontime || m.startgametime;
+      if (!ts) continue;
+      matches.push({
+        id: `aoe2:${m.id}`,
+        t: new Date(ts * 1000).toISOString(),
+        mode: rs.length === 2 ? 'rm_1v1' : 'rm_team',
+        result: me.resulttype === 1 ? 'win' : 'loss',
+        rating: null,
+        delta: null,
+        map: pretty(m.mapname),
+        pick: null,
+        opp: null,
+      });
+    }
+    for (const mode of modes) {
+      const last = matches.filter((x) => x.mode === mode.id).map((x) => x.t).sort().pop();
+      if (last && (!mode.lastGameAt || last > mode.lastGameAt)) mode.lastGameAt = last;
+    }
+  } catch (e) {
+    console.warn(`[aoe2] partidas indisponíveis: ${e.message}`);
+  }
   return {
     current: {
       game: 'aoe2',
@@ -52,5 +87,6 @@ export async function fetchGame(cfg) {
       recent: [],
     },
     backfill: null,
+    matches,
   };
 }

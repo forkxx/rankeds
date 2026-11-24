@@ -1,0 +1,9 @@
+{
+  "handle": "forkxx",
+  "featured": {
+    "chess": ["rapid", "blitz", "bullet"],
+    "aoe2": ["rm_1v1", "rm_team"],
+    "wc3": ["1v1_human", "1v1_orc", "1v1_nightelf", "1v1_undead"],
+    "aom": ["1v1", "team"]
+  }
+}

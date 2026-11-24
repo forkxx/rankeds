@@ -7,7 +7,7 @@ const GAMES = [
 ];
 const DAY = 86400000;
 const $app = document.getElementById('app');
-const state = { meta: null, data: {}, range: 30, mode: null, hrange: 90, goals: [] };
+const state = { meta: null, data: {}, range: 30, mode: null, hrange: 90, goals: [], display: null, afilter: 'all', tlAll: false };
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nf = new Intl.NumberFormat('pt-BR');
@@ -22,14 +22,15 @@ async function getJSON(path) {
 async function load() {
   state.meta = await getJSON('data/meta.json');
   state.goals = (await getJSON('config/goals.json')) || [];
+  state.display = await getJSON('config/display.json');
   await Promise.all(GAMES.map(async (g) => {
-    const [current, history] = await Promise.all([getJSON(`data/${g.id}/current.json`), getJSON(`data/${g.id}/history.json`)]);
-    state.data[g.id] = { current, history: history || {} };
+    const [current, history, mf] = await Promise.all([getJSON(`data/${g.id}/current.json`), getJSON(`data/${g.id}/history.json`), getJSON(`data/${g.id}/matches.json`)]);
+    state.data[g.id] = { current, history: history || {}, matches: mf?.matches || [] };
   }));
 }
 
 const toPts = (arr) => (arr || []).map(([d, v]) => ({ t: Date.parse(d + 'T00:00:00Z'), v }));
-const pickMode = (cur) => (cur?.modes?.length ? [...cur.modes].sort((a, b) => (b.lastGameAt || '').localeCompare(a.lastGameAt || ''))[0] : null);
+const pickMode = (cur) => (cur?.modes?.length ? mainModeOf(cur) ?? [...cur.modes].sort((a, b) => (b.lastGameAt || '').localeCompare(a.lastGameAt || ''))[0] : null);
 
 function ago(iso) {
   if (!iso) return '—';
@@ -88,11 +89,12 @@ function card(g) {
   const n = (mode.wins ?? 0) + (mode.losses ?? 0) + (mode.draws ?? 0);
   const wr = n ? Math.round(((mode.wins ?? 0) / n) * 100) + '%' : '—';
   const sp = spark(pts);
+  const others = featuredModes(cur).filter((m) => m.id !== mode.id);
   return `<a class="card" href="#/${g.id}">
-    <div class="ch"><div class="gname"><span class="sw" style="background:${g.color}"></span><div><b>${esc(g.name)}</b><small>${esc(mode.label)}</small></div></div><span class="pill ${st.cls}">${st.txt}</span></div>
+    <div class="ch"><div class="gname">${icon(g.id, 26)}<div><b>${esc(g.name)}</b><small>${esc(mode.label)}</small></div></div><span class="pill ${st.cls}">${st.txt}</span></div>
     <div class="cm"><div><div class="num big">${nf.format(mode.rating)}</div><div class="dl ${dv.cls}">${dv.txt} <span>${dv.sub}</span></div></div>
     ${sp ? `<svg viewBox="0 0 120 36" width="140" height="42" role="img" aria-label="Evolução recente do rating"><polyline points="${sp}" fill="none" stroke="${g.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>` : '<span class="note">coletando…</span>'}</div>
-    <div class="cf"><span>Pico <b>${mode.peak != null ? nf.format(mode.peak) : '—'}</b></span><span>Winrate <b>${wr}</b></span><span>${ago(cur.fetchedAt)}</span></div></a>`;
+    <div class="cf"><span>Pico <b>${mode.peak != null ? nf.format(mode.peak) : '—'}</b></span><span>Winrate <b>${wr}</b></span><span>${ago(cur.fetchedAt)}</span></div>${others.length ? `<div class="mrows">${others.map((o) => { const od = delta(toPts(d.history[o.id]), 30); return `<div class="mrow"><span>${esc(o.label)}</span><b>${nf.format(o.rating)}</b><i class="${od && od.value ? cls(od.value) : 'flat'}">${od && od.value ? (od.value > 0 ? '▲ ' : '▼ ') + Math.abs(od.value) : '—'}</i></div>`; }).join('')}</div>` : ''}</a>`;
 }
 
 
@@ -152,26 +154,31 @@ function home() {
       <div class="tile"><span class="l">Em alta</span><span class="num up">▲ ${ups}</span></div>
       <div class="tile"><span class="l">Em queda</span><span class="num down">▼ ${downs}</span></div>
     </section>
+    ${weekly()}
     ${combined()}
-    <section><div class="grid">${GAMES.map(card).join('')}</div></section>`;
+    <section><div class="grid">${GAMES.map(card).join('')}</div></section>
+    <p class="note">A página inicial mostra só os modos principais de cada jogo; todos os modos ficam na página de cada jogo. Os destaques são editáveis em config/display.json.</p>`;
 }
 
-function chart(pts, color) {
+function chart(pts, color, proj) {
   if (!pts.length) return '<div class="empty">Ainda sem pontos nesse período.</div>';
   const W = 800, H = 280, L = 48, R = 780, T = 20, B = 240;
   const vs = pts.map((p) => p.v), min = Math.min(...vs), max = Math.max(...vs);
   const pad = Math.max(10, (max - min) * 0.15);
-  const lo = Math.floor((min - pad) / 10) * 10, hi = Math.ceil((max + pad) / 10) * 10;
-  const t0 = pts[0].t, t1 = pts[pts.length - 1].t;
+  const pv = [...(proj?.pts ?? []).map((p) => p.v), ...(proj?.target != null ? [proj.target] : [])];
+  const lo = Math.floor((Math.min(min, ...pv) - pad) / 10) * 10, hi = Math.ceil((Math.max(max, ...pv) + pad) / 10) * 10;
+  const t0 = pts[0].t, t1 = Math.max(pts[pts.length - 1].t, ...(proj?.pts ?? []).map((p) => p.t));
   const X = (t) => (t1 === t0 ? (L + R) / 2 : L + ((t - t0) / (t1 - t0)) * (R - L));
   const Y = (v) => B - ((v - lo) / (hi - lo)) * (B - T);
   const grid = [0, 1, 2, 3, 4].map((i) => { const v = lo + ((hi - lo) * i) / 4, y = Y(v); return `<line x1="${L}" y1="${y}" x2="${R}" y2="${y}" stroke="#232A33"/><text x="${L - 8}" y="${y + 4}" text-anchor="end" fill="#9AA4B2" font-size="12">${Math.round(v)}</text>`; }).join('');
   const line = pts.map((p) => `${X(p.t).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ');
   const area = pts.length > 1 ? `<path d="M${line.split(' ').join(' L')} L${X(t1).toFixed(1)},${B} L${X(t0).toFixed(1)},${B} Z" fill="${color}" fill-opacity=".14"/><polyline points="${line}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>` : '';
   const pk = pts.reduce((a, b) => (b.v > a.v ? b : a)), last = pts[pts.length - 1];
+  const projSvg = (proj?.pts?.length === 2 ? `<polyline points="${proj.pts.map((p) => `${X(p.t).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ')}" fill="none" stroke="${color}" stroke-width="3" stroke-dasharray="7 6" stroke-linecap="round"/><circle cx="${X(proj.pts[1].t).toFixed(1)}" cy="${Y(proj.pts[1].v).toFixed(1)}" r="4" fill="#0E1116" stroke="${color}" stroke-width="2"/>` : '')
+    + (proj?.target != null ? `<line x1="${L}" y1="${Y(proj.target).toFixed(1)}" x2="${R}" y2="${Y(proj.target).toFixed(1)}" stroke="#E6EAF0" stroke-opacity=".5" stroke-dasharray="2 5"/><text x="${R}" y="${(Y(proj.target) - 6).toFixed(1)}" text-anchor="end" font-size="12" font-weight="600" fill="#E6EAF0">Meta ${proj.target}</text>` : '');
   const xl = [0, 1 / 3, 2 / 3, 1].map((f, i) => { const t = t0 + (t1 - t0) * f; return `<text x="${X(t)}" y="264" text-anchor="${i === 0 ? 'start' : i === 3 ? 'end' : 'middle'}" fill="#9AA4B2" font-size="12">${shortDate(t)}</text>`; }).join('');
   const peakX = X(pk.t);
-  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;font-family:Inter,sans-serif" role="img" aria-label="Gráfico de rating, de ${min} a ${max}, atual ${last.v}">${grid}${xl}${area}
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;font-family:Inter,sans-serif" role="img" aria-label="Gráfico de rating, de ${min} a ${max}, atual ${last.v}">${grid}${xl}${area}${projSvg}
     <circle cx="${peakX.toFixed(1)}" cy="${Y(pk.v).toFixed(1)}" r="5" fill="#0E1116" stroke="#E6EAF0" stroke-width="2"/>
     <text x="${Math.min(Math.max(peakX, L + 30), R - 30).toFixed(1)}" y="${(Y(pk.v) - 12).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="600" fill="#E6EAF0">Pico ${pk.v}</text>
     <circle cx="${X(last.t).toFixed(1)}" cy="${Y(last.v).toFixed(1)}" r="5" fill="${color}"/></svg>`;
@@ -187,6 +194,8 @@ function detail(id) {
   const all = toPts(d.history[mode.id]);
   const pts = state.range === 0 ? all : all.filter((p) => p.t >= (all.length ? all[all.length - 1].t : 0) - state.range * DAY);
   const dv = deltaView(delta(all, 30), 30);
+  const proj = projection(id, mode, all);
+  const dist = distanceInfo(g, mode), top = percentileOf(mode);
   const n = (mode.wins ?? 0) + (mode.losses ?? 0) + (mode.draws ?? 0);
   const wr = n ? Math.round(((mode.wins ?? 0) / n) * 100) + '%' : '—';
   const recent = (cur.recent || []).filter((r) => !r.mode || r.mode === mode.id);
@@ -194,20 +203,25 @@ function detail(id) {
   $app.innerHTML = `
     <a class="back" href="#/">← Voltar ao dashboard</a>
     <section class="hero"><div>
-      <div class="gname" style="margin-bottom:10px"><span class="sw" style="background:${g.color};width:14px;height:14px"></span><b>${esc(g.name)}</b><small>· ${esc(cur.player?.name)}</small></div>
+      <div class="gname" style="margin-bottom:10px">${icon(g.id, 28)}<b>${esc(g.name)}</b><small>· ${esc(cur.player?.name)}</small></div>
       <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span class="num big">${nf.format(mode.rating)}</span><span class="dl ${dv.cls}" style="font-size:18px">${dv.txt} <span>${dv.sub}</span></span></div></div>
       <div class="btns">${cur.modes.map((m) => `<button class="btn" data-mode="${m.id}" aria-pressed="${m.id === mode.id}" ${m.id === mode.id ? `style="background:${g.color};border-color:${g.color};color:#0E1116"` : ''}>${esc(m.label)}</button>`).join('')}</div>
     </section>
     <section class="panel"><div class="hd"><h2>Evolução do rating</h2>
       <div class="btns">${ranges.map(([v, l]) => `<button class="btn" data-range="${v}" aria-pressed="${state.range === v}" ${state.range === v ? 'style="background:#232A33;border-color:#3A4452"' : ''}>${l}</button>`).join('')}</div></div>
-      ${chart(pts, g.color)}
-      <span class="note">${all.length < 2 ? 'Histórico começou agora: o gráfico se completa a cada coleta.' : `${all.length} dias com dados desde ${shortDate(all[0].t)}.`}</span></section>
+      ${chart(pts, g.color, proj)}
+      <span class="note">${all.length < 2 ? 'Histórico começou agora: o gráfico se completa a cada coleta.' : `${all.length} dias com dados desde ${shortDate(all[0].t)}.`}${proj?.pts?.length ? ` Linha tracejada: projeção mantendo o ritmo dos últimos 30 dias (${proj.perDay30 >= 0 ? '+' : '−'}${Math.abs(proj.perDay30)} a cada 30 dias).` : ''}</span></section>
     <section class="tiles">
       <div class="tile"><span class="l">Pico histórico</span><span class="num">${mode.peak != null ? nf.format(mode.peak) : '—'}</span></div>
       <div class="tile"><span class="l">Winrate</span><span class="num">${wr}</span><span class="l">${nf.format(mode.wins ?? 0)}V · ${nf.format(mode.losses ?? 0)}D · ${nf.format(mode.draws ?? 0)}E</span></div>
       <div class="tile"><span class="l">Partidas</span><span class="num">${nf.format(n)}</span></div>
+      <div class="tile"><span class="l">Distância do pico</span><span class="num">${dist.dist <= 0 ? 'No pico' : `−${nf.format(dist.dist)}`}</span><span class="l">${dist.dist <= 0 ? 'melhor rating registrado' : `${dist.pct}% abaixo do pico de ${nf.format(dist.peak)}`}</span></div>
+      <div class="tile"><span class="l">Posição na ladder</span><span class="num">${top != null ? `Top ${nf.format(top)}%` : '—'}</span><span class="l">${mode.rank ? `#${nf.format(mode.rank)}` : top != null ? 'percentil da fonte' : 'a fonte não informa'}</span></div>
       <div class="tile"><span class="l">Última partida</span><span class="num" style="font-size:28px">${ago(mode.lastGameAt)}</span></div>
     </section>
+    ${breakdowns(id)}
+    ${monthly(all, g.color)}
+    ${yoy(all, g.color)}
     <section style="display:flex;flex-direction:column;gap:14px"><h2>Partidas recentes</h2>
       ${recent.length ? `<div class="tbl"><table><thead><tr><th>Data</th><th>Resultado</th><th>Oponente</th><th class="r">Rating após</th></tr></thead><tbody>${recent.map((r) => { const [t, c] = RESULT[r.result] || ['—', 'flat']; return `<tr><td class="flat">${new Date(r.playedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')}</td><td class="${c}" style="font-weight:600">${t}</td><td>${esc(r.opponent)}</td><td class="r">${r.ratingAfter ?? '—'}</td></tr>`; }).join('')}</tbody></table></div>` : '<div class="empty">Sem partidas recentes neste modo.</div>'}
       <div class="cf" style="border:0;padding:0"><span>Fonte: ${esc(g.source || g.name)} · coletado ${ago(cur.fetchedAt)}</span>${cur.player?.profileUrl ? `<a href="${esc(cur.player.profileUrl)}" rel="noopener" style="color:var(--text);text-decoration:underline">Abrir perfil</a>` : ''}</div></section>`;
@@ -300,8 +314,9 @@ function render() {
   setBadge();
   const m = location.hash.match(/^#\/(\w+)/);
   const route = m ? m[1] : 'home';
-  document.querySelectorAll('[data-nav]').forEach((a) => (a.dataset.nav === route || (route !== 'metas' && a.dataset.nav === 'home')) ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
-  if (route === 'metas') goalsPage(); else if (m) detail(m[1]); else home();
+  const navKey = ['metas', 'analises', 'cartao'].includes(route) ? route : 'home';
+  document.querySelectorAll('[data-nav]').forEach((a) => (a.dataset.nav === navKey ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
+  if (route === 'metas') goalsPage(); else if (route === 'analises') analysisPage(); else if (route === 'cartao') cardPage(); else if (m) detail(m[1]); else home();
 }
 
 $app.addEventListener('click', (e) => {

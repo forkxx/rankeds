@@ -5,6 +5,7 @@ const MODES = [
   ['chess_blitz', 'blitz', 'Blitz'],
   ['chess_bullet', 'bullet', 'Bullet'],
   ['chess_daily', 'daily', 'Daily'],
+  ['chess960_daily', 'daily960', 'Daily 960'],
 ];
 const DRAWS = new Set(['agreed', 'repetition', 'stalemate', 'insufficient', '50move', 'timevsinsufficient']);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -59,23 +60,31 @@ export async function fetchGame(cfg, ctx = {}) {
       lastGameAt: iso(s.last.date),
     });
   }
+  // Outras categorias do perfil: Tactics (maior rating) e Puzzle Rush (recorde de pontos).
+  if (stats.tactics?.highest?.rating) {
+    const t = stats.tactics;
+    modes.push({ id: 'tactics', label: 'Tactics', rating: t.highest.rating, peak: t.highest.rating, rank: null, tier: null, wins: null, losses: null, draws: null, lastGameAt: iso(t.highest.date) });
+  }
+  const rush = stats.puzzle_rush?.best?.score;
+  if (rush) modes.push({ id: 'puzzle_rush', label: 'Puzzle Rush (recorde)', rating: rush, peak: rush, rank: null, tier: null, wins: null, losses: null, draws: null, lastGameAt: null });
   if (!modes.length) throw new Error('perfil sem estatísticas de partidas');
 
   // Partidas: histórico completo na 1ª coleta (backfill); depois só o último mês.
   let backfill = null;
   let recent = [];
+  let matches = null;
   try {
     const { archives = [] } = await get(`/player/${u}/games/archives`, ua);
-    const urls = ctx.hasHistory ? archives.slice(-1) : archives;
+    const urls = ctx.hasMatches ? archives.slice(-2) : archives;
     const games = [];
     for (const url of urls) {
       const month = await get(new URL(url).pathname.replace(/^\/pub/, ''), ua);
       for (const g of month.games ?? []) {
-        if (g.rules !== 'chess' || !g.end_time) continue;
+        if ((g.rules !== 'chess' && g.rules !== 'chess960') || !g.end_time) continue;
         const mine = g.white?.username?.toLowerCase() === u ? g.white : g.black;
         const opp = mine === g.white ? g.black : g.white;
         if (!mine || !opp) continue;
-        games.push({ t: g.end_time, mode: g.time_class, rating: mine.rating, result: resultOf(mine.result), opp, url: g.url });
+        games.push({ t: g.end_time, mode: g.time_class + (g.rules === 'chess960' ? '960' : ''), rating: mine.rating, result: resultOf(mine.result), opp, url: g.url, color: mine === g.white ? 'Brancas' : 'Pretas' });
       }
       await sleep(150);
     }
@@ -89,6 +98,17 @@ export async function fetchGame(cfg, ctx = {}) {
       }
       for (const k of Object.keys(backfill)) backfill[k] = [...backfill[k].entries()].sort((a, b) => a[0].localeCompare(b[0]));
     }
+    matches = games.map((g) => ({
+      id: `chess:${g.url?.split('/').pop() ?? g.t}`,
+      t: iso(g.t),
+      mode: g.mode,
+      result: g.result,
+      rating: g.rating ?? null,
+      delta: null,
+      map: null,
+      pick: g.color,
+      opp: `${g.opp.username} (${g.opp.rating})`,
+    }));
     recent = games.slice(-10).reverse().map((g) => ({
       playedAt: iso(g.t),
       mode: g.mode,
@@ -111,5 +131,6 @@ export async function fetchGame(cfg, ctx = {}) {
       recent,
     },
     backfill,
+    matches,
   };
 }
