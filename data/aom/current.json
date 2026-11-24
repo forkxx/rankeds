@@ -1,7 +1,7 @@
 {
   "game": "aom",
   "ok": true,
-  "fetchedAt": "2026-11-24T07:55:04.492Z",
+  "fetchedAt": "2026-11-24T08:09:41.418Z",
   "player": {
     "name": "Oni.Forkxx",
     "id": "1073742995",
@@ -115,5 +115,124 @@
       "opponent": "isis · oasis",
       "detail": null
     }
-  ]
+  ],
+  "extras": {
+    "gods": [
+      {
+        "god": "huitzilopochtli",
+        "games": 2,
+        "wins": 2
+      },
+      {
+        "god": "tezcatlipoca",
+        "games": 1,
+        "wins": 1
+      },
+      {
+        "god": "poseidon",
+        "games": 36,
+        "wins": 26
+      },
+      {
+        "god": "tsukuyomi",
+        "games": 13,
+        "wins": 8
+      },
+      {
+        "god": "set",
+        "games": 10,
+        "wins": 6
+      },
+      {
+        "god": "isis",
+        "games": 20,
+        "wins": 12
+      },
+      {
+        "god": "hades",
+        "games": 61,
+        "wins": 36
+      },
+      {
+        "god": "nüwa",
+        "games": 7,
+        "wins": 4
+      },
+      {
+        "god": "shennong",
+        "games": 6,
+        "wins": 3
+      },
+      {
+        "god": "loki",
+        "games": 21,
+        "wins": 10
+      },
+      {
+        "god": "odin",
+        "games": 19,
+        "wins": 9
+      },
+      {
+        "god": "oranos",
+        "games": 11,
+        "wins": 5
+      },
+      {
+        "god": "quetzalcoatl",
+        "games": 11,
+        "wins": 5
+      },
+      {
+        "god": "kronos",
+        "games": 9,
+        "wins": 4
+      },
+      {
+        "god": "thor",
+        "games": 18,
+        "wins": 8
+      },
+      {
+        "god": "zeus",
+        "games": 19,
+        "wins": 8
+      },
+      {
+        "god": "fuxi",
+        "games": 8,
+        "wins": 3
+      },
+      {
+        "god": "gaia",
+        "games": 24,
+        "wins": 9
+      },
+      {
+        "god": "ra",
+        "games": 14,
+        "wins": 5
+      },
+      {
+        "god": "freyr",
+        "games": 12,
+        "wins": 4
+      },
+      {
+        "god": "amaterasu",
+        "games": 6,
+        "wins": 2
+      },
+      {
+        "god": "susanoo",
+        "games": 10,
+        "wins": 3
+      },
+      {
+        "god": "demeter",
+        "games": 8,
+        "wins": 2
+      }
+    ]
+  }
 }

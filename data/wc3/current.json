@@ -1,7 +1,7 @@
 {
   "game": "wc3",
   "ok": true,
-  "fetchedAt": "2026-11-24T07:55:03.244Z",
+  "fetchedAt": "2026-11-24T08:09:40.491Z",
   "player": {
     "name": "Forkxx",
     "id": "Forkxx#1480",
@@ -20,7 +20,8 @@
       "wins": 24,
       "losses": 28,
       "draws": null,
-      "lastGameAt": null
+      "lastGameAt": "2026-11-18T21:55:42.825Z",
+      "percentile": 19.1
     },
     {
       "id": "1v1_orc",
@@ -32,7 +33,8 @@
       "wins": 31,
       "losses": 35,
       "draws": null,
-      "lastGameAt": null
+      "lastGameAt": "2026-11-18T22:14:25.323Z",
+      "percentile": 25.1
     },
     {
       "id": "1v1_nightelf",
@@ -44,8 +46,116 @@
       "wins": 16,
       "losses": 19,
       "draws": null,
-      "lastGameAt": null
+      "lastGameAt": "2026-11-21T03:02:54.985Z",
+      "percentile": 27.4
+    },
+    {
+      "id": "direct_strike",
+      "label": "Direct Strike",
+      "rating": 1623,
+      "peak": null,
+      "rank": null,
+      "tier": null,
+      "wins": 2,
+      "losses": 1,
+      "draws": null,
+      "lastGameAt": "2026-11-07T18:49:03.462Z",
+      "percentile": 20.2
+    },
+    {
+      "id": "mini_dota",
+      "label": "Mini Dota",
+      "rating": 1708,
+      "peak": null,
+      "rank": null,
+      "tier": null,
+      "wins": 1,
+      "losses": 1,
+      "draws": null,
+      "lastGameAt": "2026-09-03T22:00:10.364Z",
+      "percentile": 10.7
     }
   ],
-  "recent": []
+  "recent": [
+    {
+      "playedAt": "2026-11-21T03:02:54.985Z",
+      "mode": "1v1_nightelf",
+      "result": "win",
+      "ratingAfter": 1486,
+      "opponent": "PureDoDo · Autumn Leaves v2",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-11-21T02:48:21.932Z",
+      "mode": "1v1_nightelf",
+      "result": "loss",
+      "ratingAfter": 1478,
+      "opponent": "Helloween · Springtime",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-11-21T02:32:12.887Z",
+      "mode": "1v1_nightelf",
+      "result": "win",
+      "ratingAfter": 1489,
+      "opponent": "freebird · Shallow Grave",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-11-21T02:13:06.855Z",
+      "mode": "1v1_nightelf",
+      "result": "win",
+      "ratingAfter": 1478,
+      "opponent": "JUMPINGK · Shallow Grave",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-11-19T21:10:06.581Z",
+      "mode": "1v1_nightelf",
+      "result": "loss",
+      "ratingAfter": 1469,
+      "opponent": "chimchim · Shallow Grave",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-11-19T20:51:45.478Z",
+      "mode": "1v1_nightelf",
+      "result": "loss",
+      "ratingAfter": 1478,
+      "opponent": "Igor768 · Fading Autumn",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-11-19T20:26:06.357Z",
+      "mode": "1v1_nightelf",
+      "result": "win",
+      "ratingAfter": 1490,
+      "opponent": "saibotzinho · Scrimmage",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-11-19T20:04:14.805Z",
+      "mode": "1v1_nightelf",
+      "result": "win",
+      "ratingAfter": 1481,
+      "opponent": "cs7792b · Tidehunters",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-11-19T19:48:41.759Z",
+      "mode": "1v1_nightelf",
+      "result": "loss",
+      "ratingAfter": 1469,
+      "opponent": "JustMe · Tidehunters",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-11-19T19:37:41.684Z",
+      "mode": "1v1_nightelf",
+      "result": "win",
+      "ratingAfter": 1481,
+      "opponent": "XejQuM33 · Fading Autumn",
+      "detail": null
+    }
+  ]
 }
