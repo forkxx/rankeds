@@ -1,0 +1,131 @@
+{
+  "game": "chess",
+  "ok": true,
+  "fetchedAt": "2026-11-24T07:17:13.099Z",
+  "player": {
+    "name": "Maximilian Rox",
+    "id": "163731237",
+    "profileUrl": "https://www.chess.com/member/forkxx",
+    "avatar": "https://images.chesscomfiles.com/uploads/v1/user/163731237.3bc33d18.200x200o.744f35944269.jpg"
+  },
+  "modes": [
+    {
+      "id": "rapid",
+      "label": "Rapid",
+      "rating": 690,
+      "peak": 886,
+      "rank": null,
+      "tier": null,
+      "wins": 224,
+      "losses": 227,
+      "draws": 26,
+      "lastGameAt": "2026-11-18T08:54:45.000Z"
+    },
+    {
+      "id": "blitz",
+      "label": "Blitz",
+      "rating": 468,
+      "peak": 683,
+      "rank": null,
+      "tier": null,
+      "wins": 65,
+      "losses": 90,
+      "draws": 3,
+      "lastGameAt": "2025-11-03T22:36:47.000Z"
+    },
+    {
+      "id": "bullet",
+      "label": "Bullet",
+      "rating": 314,
+      "peak": 408,
+      "rank": null,
+      "tier": null,
+      "wins": 12,
+      "losses": 12,
+      "draws": 0,
+      "lastGameAt": "2026-09-09T06:51:13.000Z"
+    }
+  ],
+  "recent": [
+    {
+      "playedAt": "2026-11-18T08:54:45.000Z",
+      "mode": "rapid",
+      "result": "win",
+      "ratingAfter": 690,
+      "opponent": "XRomanticCatX (673)",
+      "detail": "https://www.chess.com/game/live/187461059568"
+    },
+    {
+      "playedAt": "2026-11-12T08:15:59.000Z",
+      "mode": "rapid",
+      "result": "draw",
+      "ratingAfter": 682,
+      "opponent": "jerzykaczmarski (662)",
+      "detail": "https://www.chess.com/game/live/187035311438"
+    },
+    {
+      "playedAt": "2026-11-12T07:42:07.000Z",
+      "mode": "rapid",
+      "result": "win",
+      "ratingAfter": 682,
+      "opponent": "Chiggnburns (660)",
+      "detail": "https://www.chess.com/game/live/187034503890"
+    },
+    {
+      "playedAt": "2026-11-11T07:59:18.000Z",
+      "mode": "rapid",
+      "result": "win",
+      "ratingAfter": 674,
+      "opponent": "lowkeywashedd (694)",
+      "detail": "https://www.chess.com/game/live/186965445896"
+    },
+    {
+      "playedAt": "2026-11-11T07:29:22.000Z",
+      "mode": "rapid",
+      "result": "win",
+      "ratingAfter": 665,
+      "opponent": "OSAR_1 (665)",
+      "detail": "https://www.chess.com/game/live/186965067466"
+    },
+    {
+      "playedAt": "2026-11-05T04:46:24.000Z",
+      "mode": "rapid",
+      "result": "win",
+      "ratingAfter": 656,
+      "opponent": "jajabongi (728)",
+      "detail": "https://www.chess.com/game/live/186565261416"
+    },
+    {
+      "playedAt": "2026-10-31T10:32:27.000Z",
+      "mode": "rapid",
+      "result": "win",
+      "ratingAfter": 646,
+      "opponent": "pawansinghwayu (498)",
+      "detail": "https://www.chess.com/game/live/186269979894"
+    },
+    {
+      "playedAt": "2026-10-27T23:25:18.000Z",
+      "mode": "rapid",
+      "result": "loss",
+      "ratingAfter": 641,
+      "opponent": "emanuel_vitr (719)",
+      "detail": "https://www.chess.com/game/live/186065847430"
+    },
+    {
+      "playedAt": "2026-10-26T06:35:45.000Z",
+      "mode": "rapid",
+      "result": "win",
+      "ratingAfter": 648,
+      "opponent": "Whiteout66 (591)",
+      "detail": "https://www.chess.com/game/live/185960847662"
+    },
+    {
+      "playedAt": "2026-10-26T06:08:45.000Z",
+      "mode": "rapid",
+      "result": "loss",
+      "ratingAfter": 641,
+      "opponent": "Ariel_4_mtz (651)",
+      "detail": "https://www.chess.com/game/live/185960160850"
+    }
+  ]
+}
