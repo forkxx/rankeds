@@ -51,7 +51,8 @@ function normalizeMatch(m, tag, gmNames) {
   const opp = (m.teams ?? []).filter((t) => !t.players?.some((p) => p === me)).flatMap((t) => t.players ?? []);
   let mode;
   if (m.gameMode === 1) mode = me.rndRace != null ? '1v1_random' : `1v1_${raceKey(me.race)}`;
-  else mode = KNOWN[m.gameMode]?.[0] ?? gmNames.get(m.gameMode) ?? `gm_${m.gameMode}`;
+  else mode = KNOWN[m.gameMode]?.[0] ?? gmNames.get(m.gameMode);
+  if (!mode) return null; // modo desconhecido ou fora do escopo
   return {
     id: `wc3:${m.id}`,
     t: new Date(m.endTime ?? m.startTime).toISOString(),
@@ -97,10 +98,12 @@ export async function fetchGame(cfg, ctx = {}) {
   const seasons = (await get('/ladder/seasons')) ?? [];
   const latest = Math.max(...seasons.map((s) => s.id), 0);
 
-  // Procura a temporada mais recente (atual, ou a anterior) que tenha modos com partidas.
-  let rows = [];
-  let usedSeason = null;
-  for (const season of [latest, latest - 1]) {
+  // Junta os modos das últimas temporadas: cada modo vem da temporada mais recente em que foi jogado.
+  // Modos que não aparecem na temporada atual ficam marcados como `stale` (rating da temporada anterior).
+  const usedSeason = latest;
+  const gmNames = new Map();
+  const byId = new Map();
+  for (let season = latest; season > Math.max(0, latest - 6); season--) {
     for (const gw of GATEWAYS) {
       let data = [];
       try {
@@ -108,21 +111,21 @@ export async function fetchGame(cfg, ctx = {}) {
       } catch (e) {
         console.warn(`[wc3] gateway ${gw} temporada ${season}: ${e.message}`);
       }
-      rows.push(...data.filter((r) => r.games > 0 && modeOfRow(r)));
+      for (const r of data) {
+        if (!(r.games > 0)) continue;
+        const def = modeOfRow(r);
+        if (!def) continue;
+        if (r.gameMode !== 1) gmNames.set(r.gameMode, def.id);
+        const prev = byId.get(def.id);
+        if (prev && (prev.season > season || (prev.season === season && prev.games >= r.games))) continue;
+        byId.set(def.id, { ...r, ...def, season });
+      }
     }
-    if (rows.length) { usedSeason = season; break; }
   }
-  if (!rows.length) throw new Error('sem partidas nas últimas 2 temporadas');
+  if (!byId.size) throw new Error('sem partidas nas últimas temporadas');
+  // Modos de outros jogos (ex.: Legion TD) fora do escopo do site.
+  for (const [k, v] of byId) if (/legion/i.test(v.label)) byId.delete(k);
 
-  const gmNames = new Map();
-  const byId = new Map();
-  for (const r of rows) {
-    const def = modeOfRow(r);
-    if (r.gameMode !== 1) gmNames.set(r.gameMode, def.id);
-    const prev = byId.get(def.id);
-    if (prev && prev.games >= r.games) continue; // mesmo modo em dois servidores: fica o mais jogado
-    byId.set(def.id, { ...r, ...def });
-  }
   const modes = [...byId.values()].map((r) => ({
     id: r.id,
     label: r.label,
@@ -134,6 +137,8 @@ export async function fetchGame(cfg, ctx = {}) {
     losses: r.losses ?? null,
     draws: null,
     lastGameAt: null,
+    season: r.season,
+    stale: r.season < latest,
     percentile: r.quantile > 0 ? Math.max(0.1, Math.round((1 - r.quantile) * 1000) / 10) : null, // "Top X%"
   }));
 

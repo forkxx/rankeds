@@ -18,7 +18,7 @@ const MAX_MATCHES = 8000;
 function mergeMatches(prev, fresh) {
   const byId = new Map((prev ?? []).map((m) => [m.id, m]));
   for (const m of fresh ?? []) byId.set(m.id, { ...byId.get(m.id), ...m });
-  const list = [...byId.values()].sort((a, b) => a.t.localeCompare(b.t)).slice(-MAX_MATCHES);
+  const list = [...byId.values()].filter((m) => !m.mode.startsWith('gm_')).sort((a, b) => a.t.localeCompare(b.t)).slice(-MAX_MATCHES);
   const last = {};
   for (const m of list) {
     if (m.rating != null) {
@@ -45,6 +45,7 @@ const meta = { generatedAt: now, games: {} };
 function mergeHistory(prev, modes, backfill) {
   const out = { ...prev };
   for (const m of modes) {
+    if (m.stale) continue; // rating de temporada anterior: não gera ponto novo todo dia
     let series = out[m.id] ?? [];
     if (!series.length && backfill?.[m.id]) series = backfill[m.id];
     series = series.filter(([d]) => d !== today);
@@ -65,11 +66,15 @@ for (const [id, adapter] of Object.entries(ADAPTERS)) {
   const hasMatches = (prevMatchesFile?.matches?.length ?? 0) > 0;
   try {
     const { current, backfill, matches } = await adapter.fetchGame(cfg, { hasHistory, hasMatches });
-    await writeJSON(`${dir}/current.json`, current);
     let history = mergeHistory(prevHistory, current.modes, backfill);
     if (matches) {
       const merged = mergeMatches(prevMatchesFile?.matches, matches);
       await writeMin(`${dir}/matches.json`, { game: id, updatedAt: now, matches: merged });
+      // Última partida de cada modo, a partir de todo o registro (inclui temporadas anteriores).
+      for (const m of current.modes) {
+        const last = merged.filter((x) => x.mode === m.id).map((x) => x.t).sort().pop();
+        if (last && (!m.lastGameAt || last > m.lastGameAt)) m.lastGameAt = last;
+      }
       // Modos com pouco histórico (ex.: Warcraft III) ganham série reconstruída das partidas.
       for (const m of current.modes) {
         const fromMatches = seriesFromMatches(merged, m.id);
@@ -81,6 +86,7 @@ for (const [id, adapter] of Object.entries(ADAPTERS)) {
         }
       }
     }
+    await writeJSON(`${dir}/current.json`, current);
     await writeJSON(`${dir}/history.json`, history);
     meta.games[id] = { ok: true, fetchedAt: now };
     console.log(`[${id}] ok (${current.modes.length} modos)`);
