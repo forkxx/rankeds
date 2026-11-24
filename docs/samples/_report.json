@@ -1,0 +1,47 @@
+{
+  "w3c-profile": {
+    "status": 200,
+    "bytes": 760,
+    "url": "https://website-backend.w3champions.com/api/players/Forkxx%231480"
+  },
+  "w3c-seasons": {
+    "status": 200,
+    "bytes": 251,
+    "url": "https://website-backend.w3champions.com/api/ladder/seasons"
+  },
+  "w3c-gamemode-stats": {
+    "status": 200,
+    "bytes": 2,
+    "url": "https://website-backend.w3champions.com/api/players/Forkxx%231480/game-mode-stats?gateway=20&season=1"
+  },
+  "w3c-matches": {
+    "status": 200,
+    "bytes": 24,
+    "url": "https://website-backend.w3champions.com/api/matches/search?playerId=Forkxx%231480&gateway=20&offset=0&pageSize=10&season=1"
+  },
+  "we-aoe2-personalstat": {
+    "status": 200,
+    "bytes": 904,
+    "url": "https://aoe-api.worldsedgelink.com/community/leaderboard/getPersonalStat?title=age2&profile_ids=%5B702248%5D"
+  },
+  "we-aom-personalstat": {
+    "status": 404,
+    "bytes": 112,
+    "url": "https://aoe-api.worldsedgelink.com/community/leaderboard/getPersonalStat?title=athens&profile_ids=%5B1073742995%5D"
+  },
+  "we-aoe2-recentmatches": {
+    "status": 200,
+    "bytes": 331883,
+    "url": "https://aoe-api.worldsedgelink.com/community/leaderboard/getRecentMatchHistory?title=age2&profile_ids=%5B702248%5D"
+  },
+  "we-aom-recentmatches": {
+    "status": 404,
+    "bytes": 118,
+    "url": "https://aoe-api.worldsedgelink.com/community/leaderboard/getRecentMatchHistory?title=athens&profile_ids=%5B1073742995%5D"
+  },
+  "aoe2companion-profile": {
+    "status": 200,
+    "bytes": 26146,
+    "url": "https://data.aoe2companion.com/api/profiles/702248"
+  }
+}
