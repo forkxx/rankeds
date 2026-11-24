@@ -283,7 +283,7 @@ function cardPage() {
   const colW = rows.length ? 1100 / rows.length : 1100;
   const cols = rows.map((r, i) => { const x = 50 + i * colW, d = r.dl?.value ?? 0; return `<g transform="translate(${x},0)">
       <rect x="0" y="190" width="${colW - 16}" height="340" rx="22" fill="#161B22" stroke="#2A323D"/>
-      <g transform="translate(24,214) scale(1.5)" fill="${r.g.color}">${ICONS[r.g.id]}</g>
+      ${state.display?.icons?.[r.g.id] ? `<image href="${esc(state.display.icons[r.g.id])}" x="22" y="210" width="44" height="44" preserveAspectRatio="xMidYMid meet"/>` : `<g transform="translate(24,214) scale(1.5)" fill="${r.g.color}">${ICONS[r.g.id]}</g>`}
       <text x="76" y="240" font-family="Inter,Arial,sans-serif" font-size="19" font-weight="600" fill="#E6EAF0">${esc(r.g.name)}</text>
       <text x="24" y="296" font-family="Inter,Arial,sans-serif" font-size="20" fill="#9AA4B2">${esc(r.m.label)}</text>
       <text x="24" y="392" font-family="'Barlow Condensed','Arial Narrow',Arial,sans-serif" font-weight="700" font-size="98" fill="#FFFFFF">${nf.format(r.m.rating)}</text>
@@ -301,8 +301,16 @@ function cardPage() {
     ${rows.length ? `<div class="sharewrap">${svg}</div>` : '<div class="empty">Ainda não há dados para montar o cartão.</div>'}
     <span class="note">O cartão usa o modo principal de cada jogo (o mais jogado recentemente entre os modos de destaque). Mude os destaques em config/display.json.</span>`;
 }
-function downloadCard() {
-  const svg = document.getElementById('sharecard'); if (!svg) return;
+async function downloadCard() {
+  const live = document.getElementById('sharecard'); if (!live) return;
+  const svg = live.cloneNode(true);
+  for (const im of svg.querySelectorAll('image')) { // imagens externas não carregam dentro de SVG exportado: embute em base64
+    try {
+      const blob = await (await fetch(im.getAttribute('href'))).blob();
+      const url = await new Promise((ok) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(blob); });
+      im.setAttribute('href', url);
+    } catch { im.remove(); }
+  }
   const img = new Image();
   img.onload = () => {
     const c = document.createElement('canvas'); c.width = 2400; c.height = 1260;

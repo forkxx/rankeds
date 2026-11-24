@@ -132,3 +132,5 @@ a.card.gc:hover{border-color:var(--gc);box-shadow:0 0 30px -6px color-mix(in srg
 .sd{width:8px;height:8px;border-radius:50%;background:var(--muted)}.sd.ok{background:var(--up)}.sd.warn{background:var(--warn)}
 @media(prefers-reduced-motion:reduce){.sk{animation:none}#app.enter{animation:none}a.card.gc:hover{transform:none}}
 #app{display:flex;flex-direction:column;gap:28px;min-width:0}
+
+.gname img,.tbody img,.prow img,.legend img{border-radius:6px}

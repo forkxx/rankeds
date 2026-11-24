@@ -21,5 +21,10 @@
       "team"
     ]
   },
-  "icons": {}
+  "icons": {
+    "chess": "assets/icons/chess.png",
+    "aoe2": "assets/icons/aoe2.png",
+    "wc3": "assets/icons/wc3.png",
+    "aom": "assets/icons/aom.png"
+  }
 }
