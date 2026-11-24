@@ -1,0 +1,20 @@
+{
+  "status": 200,
+  "bytes": 582797,
+  "jsonScripts": [
+    {
+      "attrs": "",
+      "head": "{\n\t\t\t\t\t__sveltekit_1g5jlbk = {\n\t\t\t\t\t\tbase: new URL(\"..\", location).pathname.slice(0, -1),\n\t\t\t\t\t\tversion: \"0.2.250\"\n\t\t\t\t\t};\n\n\t\t\t\t\tconst element = document.currentScript.parentElement;\n\n\t\t\t\t\timport(\"../_app/immutable/entry/start.CPTF4Mmy.js\").then(async (kit) => {\n\t\t\t\t\t\tkit.init(__sveltekit_1g5jlbk);\n",
+      "len": 82362,
+      "hasRating": true
+    }
+  ],
+  "ratingContext": [
+    "- aomstats\"/> <meta property=\"og:description\" content=\"Age of Mythology: Retold profile stats for Oni.Forkxx. Rank 905 (1399 Elo) 179W-171L 51.14%% in Ranked 1v1 Supremacy. Avg eAPM: 57. 761 total games.\"/> <meta name=\"description\" content=\"Age",
+    "emacy\">Sup 1v1</p> <p class=\"flex items-baseline gap-2\"><span class=\"num text-xl font-medium leading-tight\" title=\"Elo\">1399</span> <!--[0--><span class=\"num text-ink-2\" title=\"Rank\">#905</span><!--]--></p> <!--[0--><p class=\"flex items-center ",
+    "span class=\"sr-only\">Won</span><!--]--></div> <!--[-1--><!--[0--><div class=\"flex items-center gap-2\"><span class=\"num\">1399</span> <!--[0--><!--[-1--><span class=\"delta up num text-xs\"><span class=\"tri\" aria-hidden=\"true\"><svg viewBox=\"0 0 10 ",
+    "268bba_medium.jpg\",social_link:\"/steam/76561198011546994\",leaderboard_id:1,wins:179,losses:171,streak:2,rank:905,rating:1399,highestrank:796,highestrating:1412,lastmatchdate:1789098605,live_match_id:null,avg_eapm:56.78219696969697,one_trick_god"
+  ],
+  "hasNextData": false,
+  "hasSvelte": true
+}
