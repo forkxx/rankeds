@@ -489,3 +489,64 @@ function chartTipOff(e) {
 $app.addEventListener('pointermove', chartTip);
 $app.addEventListener('pointerdown', chartTip);
 $app.addEventListener('pointerout', chartTipOff);
+
+// ---- Página inicial: placar, destaque do mês, atividade recente, metas ----
+function homeRows() {
+  const out = [];
+  for (const g of GAMES) {
+    const d = state.data[g.id]; if (!d?.current) continue;
+    for (const m of featuredModes(d.current)) {
+      const pts = toPts(d.history[m.id]);
+      out.push({ g, d, m, pts, dl: delta(pts, 30) });
+    }
+  }
+  return out;
+}
+function bigSpark(pts, color, w = 360, h = 110) {
+  const p = pts.slice(-60);
+  if (p.length < 2) return '<span class="note">coletando histórico…</span>';
+  const vs = p.map((x) => x.v), min = Math.min(...vs), max = Math.max(...vs);
+  const xy = p.map((x, i) => [(i * w) / (p.length - 1), h - 6 - ((x.v - min) / (max - min || 1)) * (h - 12)]);
+  const line = smoothPath(xy), gid = 'hs' + color.replace('#', '');
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;max-width:${w}px;height:auto" aria-hidden="true"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".4"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><path d="${line} L${w},${h} L0,${h} Z" fill="url(#${gid})"/><path d="${line}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+function homeScore() {
+  const rows = GAMES.map((g) => {
+    const d = state.data[g.id], cur = d?.current;
+    if (!cur) return `<div class="srow2 off"><div class="sg">${icon(g.id, 30)}<div><b>${esc(g.name)}</b><small>Sem dados ainda</small></div></div></div>`;
+    const m = pickMode(cur), pts = toPts(d.history[m.id]), dv = deltaView(delta(pts, 30), 30);
+    const n = (m.wins ?? 0) + (m.losses ?? 0) + (m.draws ?? 0), wr = n ? Math.round(((m.wins ?? 0) / n) * 100) + '%' : '—';
+    const pk = peakOf(m, pts), dist = pk - m.rating;
+    const sp = pts.slice(-30);
+    let spk = '<span class="note">coletando…</span>';
+    if (sp.length > 1) {
+      const vs = sp.map((x) => x.v), mn = Math.min(...vs), mx = Math.max(...vs);
+      spk = `<svg viewBox="0 0 150 36" width="150" height="36" aria-hidden="true"><polyline points="${sp.map((x, i) => `${((i * 150) / (sp.length - 1)).toFixed(1)},${(32 - ((x.v - mn) / (mx - mn || 1)) * 28).toFixed(1)}`).join(' ')}" fill="none" stroke="${g.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    }
+    return `<a class="srow2 gc" href="#/${g.id}" style="--gc:${g.color}"><div class="sg">${icon(g.id, 30)}<div><b>${esc(g.name)}</b><small>${esc(m.label)}</small></div></div>
+      <div class="num sr" data-count="${m.rating}">${nf.format(m.rating)}</div>
+      <div class="dl ${dv.cls}">${dv.txt} <span>${dv.sub}</span></div>
+      <div class="sk2">${spk}</div>
+      <div class="sm">Winrate<b>${wr}</b></div>
+      <div class="sm">Do pico<b>${dist > 0 ? '−' + nf.format(dist) : 'no pico'}</b></div></a>`;
+  }).join('');
+  return `<div class="panel scorep"><div class="shead"><span>Jogo</span><span>Rating</span><span>30 dias</span><span>Tendência</span><span></span><span></span></div>${rows}</div>`;
+}
+function homeGoals() {
+  const ev = (state.goals || []).map(evalGoal).filter((e) => e.status !== 'nodata');
+  if (!ev.length) return '';
+  return `<section class="panel"><div class="hd"><h2 style="font-size:18px">Metas</h2><a class="note" href="#/metas">ver todas</a></div>${ev.map((e) => `<div class="gline"><div><span>${icon(e.g.id, 16)} ${esc(e.g.name)} → ${nf.format(e.goal.target)}</span><b>${e.pct}%</b></div><div class="bar"><div style="width:${e.pct}%;background:${e.g.color}"></div></div></div>`).join('')}</section>`;
+}
+function homeHighlight() {
+  const rows = homeRows().filter((r) => r.dl && r.pts.length > 1);
+  if (!rows.length) return '';
+  const b = rows.reduce((x, y) => (y.dl.value > x.dl.value ? y : x));
+  const dv = deltaView(b.dl, 30);
+  return `<a class="hl gc" href="#/${b.g.id}" style="--gc:${b.g.color}"><div class="hl-l"><span class="pk">${b.dl.value > 0 ? 'DESTAQUE DO MÊS' : 'MODO MAIS ESTÁVEL DO MÊS'}</span><div class="hl-t">${icon(b.g.id, 36)}<b>${esc(b.g.name)} · ${esc(b.m.label)}</b></div><div class="hl-n"><span class="num" data-count="${b.m.rating}">${nf.format(b.m.rating)}</span><span class="dl ${dv.cls}">${dv.txt} <span>${dv.sub}</span></span></div></div><div class="hl-r">${bigSpark(b.pts, b.g.color)}</div></a>`;
+}
+function homeFeed() {
+  const all = GAMES.flatMap((g) => matchesOf(g.id).map((m) => ({ ...m, g }))).sort((a, b) => b.t.localeCompare(a.t)).slice(0, 8);
+  const NAME = { win: ['Vitória', 'up'], loss: ['Derrota', 'down'], draw: ['Empate', 'flat'] };
+  const body = all.length ? all.map((m) => { const [n, c] = NAME[m.result] || ['—', 'flat']; return `<a class="fitem" href="#/${m.g.id}">${icon(m.g.id, 26)}<div class="fi"><b>${esc(m.g.name)} · ${n}</b><small>${esc(m.opp || m.map || m.mode)} · ${ago(m.t)}</small></div><b class="${m.delta ? cls(m.delta) : 'flat'}">${m.delta ? (m.delta > 0 ? '+' : '−') + Math.abs(m.delta) : '—'}</b></a>`; }).join('') : '<div class="empty">Nenhuma partida registrada ainda.</div>';
+  return `<section class="panel"><div class="hd"><h2 style="font-size:18px">Atividade recente</h2><a class="note" href="#/analises">ver análises</a></div><div class="feed">${body}</div></section>`;
+}

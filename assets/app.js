@@ -143,22 +143,12 @@ function combined() {
 }
 
 function home() {
-  const withData = GAMES.filter((g) => state.data[g.id]?.current);
-  let ups = 0, downs = 0;
-  for (const g of withData) {
-    const d = state.data[g.id], m = pickMode(d.current), dl = delta(toPts(d.history[m.id]), 30);
-    if (dl?.value > 0) ups++; else if (dl?.value < 0) downs++;
-  }
   $app.innerHTML = `
     <section><h1>Minha evolução competitiva</h1><p class="lead">Todos os jogos ranqueados num só lugar, com histórico coletado automaticamente.</p></section>
-    <section class="tiles">
-      <div class="tile"><span class="l">Jogos com dados</span><span class="num">${withData.length} <span class="flat" style="font-size:24px">/ ${GAMES.length}</span></span></div>
-      <div class="tile"><span class="l">Em alta</span><span class="num up">▲ ${ups}</span></div>
-      <div class="tile"><span class="l">Em queda</span><span class="num down">▼ ${downs}</span></div>
-    </section>
     ${peakBanner()}
-    <section class="bento"><div class="b8">${combined()}</div><div class="b4">${weekly()}</div></section>
-    <section><div class="grid">${GAMES.map(card).join('')}</div></section>
+    <section class="hscore">${homeScore()}<aside class="hside">${weekly()}${homeGoals()}</aside></section>
+    ${homeHighlight()}
+    <section class="hrow">${homeFeed()}<div class="hrow-r">${combined()}</div></section>
     <p class="note">A página inicial mostra só os modos principais de cada jogo; todos os modos ficam na página de cada jogo. Os destaques são editáveis em config/display.json.</p>`;
 }
 
