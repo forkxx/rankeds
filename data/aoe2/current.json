@@ -1,0 +1,38 @@
+{
+  "game": "aoe2",
+  "ok": true,
+  "fetchedAt": "2026-11-24T07:30:55.303Z",
+  "player": {
+    "name": "Oni.Forkxx",
+    "id": "702248",
+    "profileUrl": "https://www.aoe2insights.com/user/702248/",
+    "avatar": null
+  },
+  "modes": [
+    {
+      "id": "rm_1v1",
+      "label": "1v1 Random Map",
+      "rating": 991,
+      "peak": 1068,
+      "rank": null,
+      "tier": null,
+      "wins": 58,
+      "losses": 57,
+      "draws": null,
+      "lastGameAt": "2026-09-10T22:34:06.000Z"
+    },
+    {
+      "id": "rm_team",
+      "label": "Team Random Map",
+      "rating": 1422,
+      "peak": 1422,
+      "rank": null,
+      "tier": null,
+      "wins": 69,
+      "losses": 55,
+      "draws": null,
+      "lastGameAt": "2026-06-02T21:27:22.000Z"
+    }
+  ],
+  "recent": []
+}
