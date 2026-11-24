@@ -10,7 +10,10 @@ const ICONS = {
   aom: '<path fill-rule="evenodd" d="M12 3 22 20H2zm0 7a2.2 2.2 0 1 0 0 4.4 2.2 2.2 0 0 0 0-4.4z"/>',
 };
 const gameOf = (id) => GAMES.find((g) => g.id === id);
-const icon = (id, size = 20) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="${gameOf(id)?.color ?? '#9AA4B2'}" aria-hidden="true" style="flex:none">${ICONS[id] ?? ''}</svg>`;
+const icon = (id, size = 20) => state.display?.icons?.[id]
+  ? `<img src="${esc(state.display.icons[id])}" width="${size}" height="${size}" alt="" style="flex:none;object-fit:contain">`
+  : iconSvg(id, size);
+const iconSvg = (id, size = 20) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="${gameOf(id)?.color ?? '#9AA4B2'}" aria-hidden="true" style="flex:none">${ICONS[id] ?? ''}</svg>`;
 const matchesOf = (id) => state.data[id]?.matches || [];
 const cap = (s) => String(s ?? '').replace(/(^|\s)\S/g, (c) => c.toUpperCase());
 const dayKey = (iso) => new Date(iso).toLocaleDateString('sv-SE'); // dia local AAAA-MM-DD
@@ -325,3 +328,84 @@ $app.addEventListener('click', (e) => {
   if (a?.dataset.act === 'tlmore') { state.tlAll = !state.tlAll; render(); }
   if (a?.dataset.act === 'dlcard') downloadCard();
 });
+
+
+// ---- 13. Tabela de partidas ----
+function matchTable(id, mode, recent) {
+  const ml = matchesOf(id).filter((x) => x.mode === mode.id).slice(-10).reverse();
+  const rows = ml.length
+    ? ml.map((x) => ({ t: x.t, result: x.result, who: [x.opp, x.map].filter(Boolean).join(' · '), rating: x.rating, delta: x.delta }))
+    : recent.map((r) => ({ t: r.playedAt, result: r.result, who: r.opponent, rating: r.ratingAfter, delta: null }));
+  if (!rows.length) return '<div class="empty">Sem partidas recentes neste modo.</div>';
+  const NAME = { win: ['V', 'Vitória'], loss: ['D', 'Derrota'], draw: ['E', 'Empate'] };
+  return `<div class="tbl"><table class="zebra"><thead><tr><th>Data</th><th>Resultado</th><th>Oponente · mapa</th><th class="r">Rating após</th><th class="r">Variação</th></tr></thead><tbody>${rows.map((r) => {
+    const [l, n] = NAME[r.result] || ['?', '—'];
+    return `<tr><td class="flat">${new Date(r.t).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')}</td><td><span class="rdot ${r.result}">${l}</span> ${n}</td><td>${esc(r.who || '—')}</td><td class="r">${r.rating ?? '—'}</td><td class="r ${r.delta ? cls(r.delta) : 'flat'}" style="font-weight:600">${r.delta ? (r.delta > 0 ? '+' : '−') + Math.abs(r.delta) : '—'}</td></tr>`;
+  }).join('')}</tbody></table></div>`;
+}
+
+// ---- 16. Faixa de novo pico ----
+function peakBanner() {
+  const now = Date.now(), out = [];
+  for (const g of GAMES) {
+    const d = state.data[g.id]; if (!d?.current) continue;
+    for (const m of featuredModes(d.current)) {
+      const pts = toPts(d.history[m.id]);
+      if (pts.length < 10) continue;
+      const max = Math.max(...pts.map((p) => p.v));
+      if (m.rating < max || m.rating < (m.peak ?? 0)) continue;
+      const first = pts.find((p) => p.v === max);
+      if (now - first.t > 7 * DAY) continue;
+      const before = pts.filter((p) => p.t < first.t).map((p) => p.v);
+      if (!before.length || !(max > Math.max(...before))) continue;
+      out.push({ g, m, first });
+    }
+  }
+  return out.slice(0, 2).map(({ g, m, first }) => `<section class="peakbn gc" style="--gc:${g.color}" role="status">${icon(g.id, 34)}<div><span class="pk">NOVO PICO</span><b>${esc(g.name)} · ${esc(m.label)}</b><small>${dateFmt(first.t)}</small></div><span class="num">${nf.format(m.rating)}</span></section>`).join('');
+}
+
+// ---- Pós-renderização: transição, números animados, tom de fundo, dica do gráfico ----
+const hexRgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
+function afterRender(route, prevKey) {
+  const key = route === 'home' ? 'home' : route;
+  const modeKey = key + '|' + (state.mode ?? '');
+  const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const g = gameOf(route);
+  document.body.style.setProperty('--tint', g ? hexRgba(g.color, 0.2) : 'transparent');
+  if (state.lastKey !== key && !reduce) { $app.classList.remove('enter'); void $app.offsetWidth; $app.classList.add('enter'); }
+  if ((state.lastKey !== key || state.lastModeKey !== modeKey) && !reduce) animateNums();
+  state.lastKey = key; state.lastModeKey = modeKey;
+}
+function animateNums() {
+  document.querySelectorAll('[data-count]').forEach((el) => {
+    const end = Number(el.dataset.count); if (!Number.isFinite(end)) return;
+    const t0 = performance.now(), dur = 700;
+    const step = (now) => { const k = Math.min(1, (now - t0) / dur); el.textContent = nf.format(Math.round(end * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  });
+}
+
+// ---- 6. Dica interativa no gráfico ----
+function chartTip(e) {
+  const w = e.target.closest?.('.chartwrap'); if (!w) return;
+  const svg = w.querySelector('svg'), tip = w.querySelector('.tip'), tg = w.querySelector('.tipg');
+  const meta = w._m ?? (w._m = JSON.parse(w.dataset.chart));
+  const r = svg.getBoundingClientRect(); if (!r.width) return;
+  const vx = ((e.clientX - r.left) / r.width) * 800;
+  const X = (t) => (meta.t1 === meta.t0 ? (meta.L + meta.R) / 2 : meta.L + ((t - meta.t0) / (meta.t1 - meta.t0)) * (meta.R - meta.L));
+  let best = meta.p[0], bd = Infinity;
+  for (const p of meta.p) { const dd = Math.abs(X(p[0]) - vx); if (dd < bd) { bd = dd; best = p; } }
+  const x = X(best[0]);
+  tg.style.display = '';
+  const line = tg.querySelector('line'); line.setAttribute('x1', x); line.setAttribute('x2', x);
+  const circ = tg.querySelector('circle'); circ.setAttribute('cx', x); circ.setAttribute('cy', meta.B - ((best[1] - meta.lo) / (meta.hi - meta.lo || 1)) * (meta.B - meta.T));
+  tip.hidden = false; tip.innerHTML = `<small>${dateFmt(best[0])}</small><b>${nf.format(best[1])}</b>`;
+  tip.style.left = `${Math.min(88, Math.max(12, (x / 800) * 100))}%`;
+}
+function chartTipOff(e) {
+  const w = e.target.closest?.('.chartwrap'); if (!w || w.contains(e.relatedTarget)) return;
+  w.querySelector('.tipg').style.display = 'none'; w.querySelector('.tip').hidden = true;
+}
+$app.addEventListener('pointermove', chartTip);
+$app.addEventListener('pointerdown', chartTip);
+$app.addEventListener('pointerout', chartTipOff);

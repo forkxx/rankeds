@@ -19,10 +19,10 @@
     <nav class="mainnav" aria-label="Principal"><a href="#/" data-nav="home">Dashboard</a><a href="#/metas" data-nav="metas">Metas</a><a href="#/analises" data-nav="analises">Análises</a><a href="#/cartao" data-nav="cartao">Cartão</a></nav>
     <div class="badge" id="badge"><span class="dot"></span><span id="badge-text">Carregando…</span></div>
   </header>
-  <main id="app" aria-live="polite"></main>
+  <main id="app" aria-live="polite" aria-busy="true"><div class="skel" aria-hidden="true"><div class="sk" style="height:56px;width:min(420px,70%)"></div><div class="sk" style="height:96px"></div><div class="skgrid"><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div></div></main>
   <footer class="foot">
     <span>Rankeds · GitHub Pages · coleta automática por GitHub Actions</span>
-    <span>Fontes: Chess.com PubAPI, Worlds Edge, W3Champions, aomstats.io</span>
+    <span id="srcstatus" class="srcs">Fontes: Chess.com PubAPI, Worlds Edge, W3Champions, aomstats.io</span>
   </footer>
 </div>
 <script src="assets/app.js"></script>

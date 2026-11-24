@@ -77,6 +77,8 @@ function setBadge() {
   const any = Object.values(state.meta?.games || {});
   b.className = 'badge ' + (!g ? '' : any.some((x) => !x.ok) ? 'warn' : 'ok');
   t.textContent = g ? `Atualizado ${ago(g)}` : 'Aguardando primeira coleta';
+  const ss = document.getElementById('srcstatus');
+  if (ss) ss.innerHTML = GAMES.map((x) => { const st = status(x.id), f = state.meta?.games?.[x.id]?.fetchedAt; return `<span class="src" title="Fonte: ${esc(x.source)}"><i class="sd ${st.cls}"></i>${esc(x.name)} <small>${f ? ago(f) : 'sem coleta'}</small></span>`; }).join('');
 }
 
 function card(g) {
@@ -90,9 +92,9 @@ function card(g) {
   const wr = n ? Math.round(((mode.wins ?? 0) / n) * 100) + '%' : '—';
   const sp = spark(pts);
   const others = featuredModes(cur).filter((m) => m.id !== mode.id);
-  return `<a class="card" href="#/${g.id}">
+  return `<a class="card gc" href="#/${g.id}" style="--gc:${g.color}">
     <div class="ch"><div class="gname">${icon(g.id, 26)}<div><b>${esc(g.name)}</b><small>${esc(mode.label)}</small></div></div><span class="pill ${st.cls}">${st.txt}</span></div>
-    <div class="cm"><div><div class="num big">${nf.format(mode.rating)}</div><div class="dl ${dv.cls}">${dv.txt} <span>${dv.sub}</span></div></div>
+    <div class="cm"><div><div class="num big" data-count="${mode.rating}">${nf.format(mode.rating)}</div><div class="dl ${dv.cls}">${dv.txt} <span>${dv.sub}</span></div></div>
     ${sp ? `<svg viewBox="0 0 120 36" width="140" height="42" role="img" aria-label="Evolução recente do rating"><polyline points="${sp}" fill="none" stroke="${g.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>` : '<span class="note">coletando…</span>'}</div>
     <div class="cf"><span>Pico <b>${mode.peak != null ? nf.format(mode.peak) : '—'}</b></span><span>Winrate <b>${wr}</b></span><span>${ago(cur.fetchedAt)}</span></div>${others.length ? `<div class="mrows">${others.map((o) => { const od = delta(toPts(d.history[o.id]), 30); return `<div class="mrow"><span>${esc(o.label)}</span><b>${nf.format(o.rating)}</b><i class="${od && od.value ? cls(od.value) : 'flat'}">${od && od.value ? (od.value > 0 ? '▲ ' : '▼ ') + Math.abs(od.value) : '—'}</i></div>`; }).join('')}</div>` : ''}</a>`;
 }
@@ -154,10 +156,28 @@ function home() {
       <div class="tile"><span class="l">Em alta</span><span class="num up">▲ ${ups}</span></div>
       <div class="tile"><span class="l">Em queda</span><span class="num down">▼ ${downs}</span></div>
     </section>
-    ${weekly()}
-    ${combined()}
+    ${peakBanner()}
+    <section class="bento"><div class="b8">${combined()}</div><div class="b4">${weekly()}</div></section>
     <section><div class="grid">${GAMES.map(card).join('')}</div></section>
     <p class="note">A página inicial mostra só os modos principais de cada jogo; todos os modos ficam na página de cada jogo. Os destaques são editáveis em config/display.json.</p>`;
+}
+
+// Curva suave (interpolação monotônica) para o gráfico de rating.
+function smoothPath(xy) {
+  const n = xy.length;
+  if (n < 3) return 'M' + xy.map((p) => p.join(',')).join(' L');
+  const dx = [], m = [], t = new Array(n);
+  for (let i = 0; i < n - 1; i++) { dx[i] = xy[i + 1][0] - xy[i][0]; m[i] = (xy[i + 1][1] - xy[i][1]) / (dx[i] || 1); }
+  t[0] = m[0]; t[n - 1] = m[n - 2];
+  for (let i = 1; i < n - 1; i++) t[i] = m[i - 1] * m[i] <= 0 ? 0 : (m[i - 1] + m[i]) / 2;
+  for (let i = 0; i < n - 1; i++) {
+    if (m[i] === 0) { t[i] = 0; t[i + 1] = 0; continue; }
+    const a = t[i] / m[i], b = t[i + 1] / m[i], q = a * a + b * b;
+    if (q > 9) { const k = 3 / Math.sqrt(q); t[i] = k * a * m[i]; t[i + 1] = k * b * m[i]; }
+  }
+  let d = `M${xy[0][0].toFixed(1)},${xy[0][1].toFixed(1)}`;
+  for (let i = 0; i < n - 1; i++) d += ` C${(xy[i][0] + dx[i] / 3).toFixed(1)},${(xy[i][1] + (t[i] * dx[i]) / 3).toFixed(1)} ${(xy[i + 1][0] - dx[i] / 3).toFixed(1)},${(xy[i + 1][1] - (t[i + 1] * dx[i]) / 3).toFixed(1)} ${xy[i + 1][0].toFixed(1)},${xy[i + 1][1].toFixed(1)}`;
+  return d;
 }
 
 function chart(pts, color, proj) {
@@ -171,17 +191,21 @@ function chart(pts, color, proj) {
   const X = (t) => (t1 === t0 ? (L + R) / 2 : L + ((t - t0) / (t1 - t0)) * (R - L));
   const Y = (v) => B - ((v - lo) / (hi - lo)) * (B - T);
   const grid = [0, 1, 2, 3, 4].map((i) => { const v = lo + ((hi - lo) * i) / 4, y = Y(v); return `<line x1="${L}" y1="${y}" x2="${R}" y2="${y}" stroke="#232A33"/><text x="${L - 8}" y="${y + 4}" text-anchor="end" fill="#9AA4B2" font-size="12">${Math.round(v)}</text>`; }).join('');
-  const line = pts.map((p) => `${X(p.t).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ');
-  const area = pts.length > 1 ? `<path d="M${line.split(' ').join(' L')} L${X(t1).toFixed(1)},${B} L${X(t0).toFixed(1)},${B} Z" fill="${color}" fill-opacity=".14"/><polyline points="${line}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>` : '';
+  const xy = pts.map((p) => [X(p.t), Y(p.v)]);
+  const gid = 'cg' + color.replace('#', '');
+  const line = smoothPath(xy);
+  const area = pts.length > 1 ? `<path d="${line} L${X(t1 === t0 ? t0 : pts[pts.length - 1].t).toFixed(1)},${B} L${X(t0).toFixed(1)},${B} Z" fill="url(#${gid})"/><path d="${line}" fill="none" stroke="${color}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>` : '';
   const pk = pts.reduce((a, b) => (b.v > a.v ? b : a)), last = pts[pts.length - 1];
   const projSvg = (proj?.pts?.length === 2 ? `<polyline points="${proj.pts.map((p) => `${X(p.t).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ')}" fill="none" stroke="${color}" stroke-width="3" stroke-dasharray="7 6" stroke-linecap="round"/><circle cx="${X(proj.pts[1].t).toFixed(1)}" cy="${Y(proj.pts[1].v).toFixed(1)}" r="4" fill="#0E1116" stroke="${color}" stroke-width="2"/>` : '')
     + (proj?.target != null ? `<line x1="${L}" y1="${Y(proj.target).toFixed(1)}" x2="${R}" y2="${Y(proj.target).toFixed(1)}" stroke="#E6EAF0" stroke-opacity=".5" stroke-dasharray="2 5"/><text x="${R}" y="${(Y(proj.target) - 6).toFixed(1)}" text-anchor="end" font-size="12" font-weight="600" fill="#E6EAF0">Meta ${proj.target}</text>` : '');
   const xl = [0, 1 / 3, 2 / 3, 1].map((f, i) => { const t = t0 + (t1 - t0) * f; return `<text x="${X(t)}" y="264" text-anchor="${i === 0 ? 'start' : i === 3 ? 'end' : 'middle'}" fill="#9AA4B2" font-size="12">${shortDate(t)}</text>`; }).join('');
   const peakX = X(pk.t);
-  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;font-family:Inter,sans-serif" role="img" aria-label="Gráfico de rating, de ${min} a ${max}, atual ${last.v}">${grid}${xl}${area}${projSvg}
+  const meta = JSON.stringify({ p: pts.length > 400 ? pts.filter((_, i) => i % Math.ceil(pts.length / 400) === 0 || i === pts.length - 1).map((p) => [p.t, p.v]) : pts.map((p) => [p.t, p.v]), L, R, T, B, t0, t1, lo, hi });
+  return `<div class="chartwrap" data-chart="${esc(meta)}"><svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;font-family:Inter,sans-serif" role="img" aria-label="Gráfico de rating, de ${min} a ${max}, atual ${last.v}"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".42"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>${grid}${xl}${area}${projSvg}
     <circle cx="${peakX.toFixed(1)}" cy="${Y(pk.v).toFixed(1)}" r="5" fill="#0E1116" stroke="#E6EAF0" stroke-width="2"/>
     <text x="${Math.min(Math.max(peakX, L + 30), R - 30).toFixed(1)}" y="${(Y(pk.v) - 12).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="600" fill="#E6EAF0">Pico ${pk.v}</text>
-    <circle cx="${X(last.t).toFixed(1)}" cy="${Y(last.v).toFixed(1)}" r="5" fill="${color}"/></svg>`;
+    <circle cx="${X(last.t).toFixed(1)}" cy="${Y(last.v).toFixed(1)}" r="5" fill="${color}"/>
+    <g class="tipg" style="display:none;pointer-events:none"><line y1="${T}" y2="${B}" stroke="#9AA4B2" stroke-dasharray="3 3"/><circle r="6" fill="#0E1116" stroke="${color}" stroke-width="3"/></g></svg><div class="tip" hidden></div></div>`;
 }
 
 const RESULT = { win: ['Vitória ✓', 'up'], loss: ['Derrota ✗', 'down'], draw: ['Empate =', 'flat'] };
@@ -202,28 +226,28 @@ function detail(id) {
   const ranges = [[30, '30d'], [90, '90d'], [365, '1 ano'], [0, 'Tudo']];
   $app.innerHTML = `
     <a class="back" href="#/">← Voltar ao dashboard</a>
-    <section class="hero"><div>
+    <section class="hero gc" style="--gc:${g.color}"><div>
       <div class="gname" style="margin-bottom:10px">${icon(g.id, 28)}<b>${esc(g.name)}</b><small>· ${esc(cur.player?.name)}</small></div>
-      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span class="num big">${nf.format(mode.rating)}</span><span class="dl ${dv.cls}" style="font-size:18px">${dv.txt} <span>${dv.sub}</span></span></div></div>
-      <div class="btns">${cur.modes.map((m) => `<button class="btn" data-mode="${m.id}" aria-pressed="${m.id === mode.id}" ${m.id === mode.id ? `style="background:${g.color};border-color:${g.color};color:#0E1116"` : ''}>${esc(m.label)}</button>`).join('')}</div>
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span class="num big" data-count="${mode.rating}">${nf.format(mode.rating)}</span><span class="dl ${dv.cls}" style="font-size:18px">${dv.txt} <span>${dv.sub}</span></span></div></div>
+      <div class="seg" role="group" aria-label="Modo de jogo">${cur.modes.map((m) => `<button class="segb" data-mode="${m.id}" aria-pressed="${m.id === mode.id}">${esc(m.label)}${m.stale ? ' <small>(T' + m.season + ')</small>' : ''}</button>`).join('')}</div>
     </section>
-    <section class="panel"><div class="hd"><h2>Evolução do rating</h2>
+    <section class="bento"><div class="b8"><div class="panel" style="height:100%"><div class="hd"><h2>Evolução do rating</h2>
       <div class="btns">${ranges.map(([v, l]) => `<button class="btn" data-range="${v}" aria-pressed="${state.range === v}" ${state.range === v ? 'style="background:#232A33;border-color:#3A4452"' : ''}>${l}</button>`).join('')}</div></div>
       ${chart(pts, g.color, proj)}
-      <span class="note">${all.length < 2 ? 'Histórico começou agora: o gráfico se completa a cada coleta.' : `${all.length} dias com dados desde ${shortDate(all[0].t)}.`}${proj?.pts?.length ? ` Linha tracejada: projeção mantendo o ritmo dos últimos 30 dias (${proj.perDay30 >= 0 ? '+' : '−'}${Math.abs(proj.perDay30)} a cada 30 dias).` : ''}</span></section>
-    <section class="tiles">
+      <span class="note">${all.length < 2 ? 'Histórico começou agora: o gráfico se completa a cada coleta.' : `${all.length} dias com dados desde ${shortDate(all[0].t)}.`}${proj?.pts?.length ? ` Linha tracejada: projeção mantendo o ritmo dos últimos 30 dias (${proj.perDay30 >= 0 ? '+' : '−'}${Math.abs(proj.perDay30)} a cada 30 dias).` : ''}</span></div></div>
+    <div class="b4"><div class="tiles grid2">
       <div class="tile"><span class="l">Pico histórico</span><span class="num">${mode.peak != null ? nf.format(mode.peak) : '—'}</span></div>
       <div class="tile"><span class="l">Winrate</span><span class="num">${wr}</span><span class="l">${nf.format(mode.wins ?? 0)}V · ${nf.format(mode.losses ?? 0)}D · ${nf.format(mode.draws ?? 0)}E</span></div>
       <div class="tile"><span class="l">Partidas</span><span class="num">${nf.format(n)}</span></div>
       <div class="tile"><span class="l">Distância do pico</span><span class="num">${dist.dist <= 0 ? 'No pico' : `−${nf.format(dist.dist)}`}</span><span class="l">${dist.dist <= 0 ? 'melhor rating registrado' : `${dist.pct}% abaixo do pico de ${nf.format(dist.peak)}`}</span></div>
       <div class="tile"><span class="l">Posição na ladder</span><span class="num">${top != null ? `Top ${nf.format(top)}%` : '—'}</span><span class="l">${mode.rank ? `#${nf.format(mode.rank)}` : top != null ? 'percentil da fonte' : 'a fonte não informa'}</span></div>
       <div class="tile"><span class="l">Última partida</span><span class="num" style="font-size:28px">${ago(mode.lastGameAt)}</span></div>
-    </section>
+    </div></div></section>
     ${breakdowns(id)}
     ${monthly(all, g.color)}
     ${yoy(all, g.color)}
     <section style="display:flex;flex-direction:column;gap:14px"><h2>Partidas recentes</h2>
-      ${recent.length ? `<div class="tbl"><table><thead><tr><th>Data</th><th>Resultado</th><th>Oponente</th><th class="r">Rating após</th></tr></thead><tbody>${recent.map((r) => { const [t, c] = RESULT[r.result] || ['—', 'flat']; return `<tr><td class="flat">${new Date(r.playedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')}</td><td class="${c}" style="font-weight:600">${t}</td><td>${esc(r.opponent)}</td><td class="r">${r.ratingAfter ?? '—'}</td></tr>`; }).join('')}</tbody></table></div>` : '<div class="empty">Sem partidas recentes neste modo.</div>'}
+      ${matchTable(id, mode, recent)}
       <div class="cf" style="border:0;padding:0"><span>Fonte: ${esc(g.source || g.name)} · coletado ${ago(cur.fetchedAt)}</span>${cur.player?.profileUrl ? `<a href="${esc(cur.player.profileUrl)}" rel="noopener" style="color:var(--text);text-decoration:underline">Abrir perfil</a>` : ''}</div></section>`;
 }
 
@@ -312,11 +336,13 @@ function goalsPage() {
 
 function render() {
   setBadge();
+  const prevKey = state.lastKey;
   const m = location.hash.match(/^#\/(\w+)/);
   const route = m ? m[1] : 'home';
   const navKey = ['metas', 'analises', 'cartao'].includes(route) ? route : 'home';
   document.querySelectorAll('[data-nav]').forEach((a) => (a.dataset.nav === navKey ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
   if (route === 'metas') goalsPage(); else if (route === 'analises') analysisPage(); else if (route === 'cartao') cardPage(); else if (m) detail(m[1]); else home();
+  if (typeof afterRender === 'function') afterRender(route, prevKey);
 }
 
 $app.addEventListener('click', (e) => {
