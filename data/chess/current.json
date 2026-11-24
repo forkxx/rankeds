@@ -1,7 +1,7 @@
 {
   "game": "chess",
   "ok": true,
-  "fetchedAt": "2026-11-24T07:17:13.099Z",
+  "fetchedAt": "2026-11-24T07:25:24.465Z",
   "player": {
     "name": "Maximilian Rox",
     "id": "163731237",
@@ -94,38 +94,6 @@
       "ratingAfter": 656,
       "opponent": "jajabongi (728)",
       "detail": "https://www.chess.com/game/live/186565261416"
-    },
-    {
-      "playedAt": "2026-10-31T10:32:27.000Z",
-      "mode": "rapid",
-      "result": "win",
-      "ratingAfter": 646,
-      "opponent": "pawansinghwayu (498)",
-      "detail": "https://www.chess.com/game/live/186269979894"
-    },
-    {
-      "playedAt": "2026-10-27T23:25:18.000Z",
-      "mode": "rapid",
-      "result": "loss",
-      "ratingAfter": 641,
-      "opponent": "emanuel_vitr (719)",
-      "detail": "https://www.chess.com/game/live/186065847430"
-    },
-    {
-      "playedAt": "2026-10-26T06:35:45.000Z",
-      "mode": "rapid",
-      "result": "win",
-      "ratingAfter": 648,
-      "opponent": "Whiteout66 (591)",
-      "detail": "https://www.chess.com/game/live/185960847662"
-    },
-    {
-      "playedAt": "2026-10-26T06:08:45.000Z",
-      "mode": "rapid",
-      "result": "loss",
-      "ratingAfter": 641,
-      "opponent": "Ariel_4_mtz (651)",
-      "detail": "https://www.chess.com/game/live/185960160850"
     }
   ]
 }
