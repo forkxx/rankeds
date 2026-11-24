@@ -3,11 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
 <title>Rankeds</title>
-<style>
-body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0E1116;color:#E6EAF0;font-family:system-ui,sans-serif}
-h1{letter-spacing:2px;margin:0 0 8px}p{color:#9AA4B2;margin:0}
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
 </head>
-<body><main style="text-align:center"><h1>RANKEDS</h1><p>Em construção.</p></main></body>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#/">
+      <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="7" fill="#E6EAF0"/><path d="M8 22 L13 15 L18 19 L24 9" fill="none" stroke="#0E1116" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>RANKEDS</span>
+    </a>
+    <div class="badge" id="badge"><span class="dot"></span><span id="badge-text">Carregando…</span></div>
+  </header>
+  <main id="app" aria-live="polite"></main>
+  <footer class="foot">
+    <span>Rankeds · GitHub Pages · coleta automática por GitHub Actions</span>
+    <span>Fontes: Chess.com PubAPI</span>
+  </footer>
+</div>
+<script src="assets/app.js"></script>
+</body>
 </html>

@@ -1,0 +1,49 @@
+:root{--bg:#0E1116;--card:#161B22;--line:#232A33;--line2:#3A4452;--text:#E6EAF0;--muted:#9AA4B2;--up:#4ADE80;--down:#F87171;--warn:#F5B94C}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif}
+a{color:inherit;text-decoration:none}
+a:focus-visible,button:focus-visible{outline:2px solid var(--text);outline-offset:3px}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px 64px;display:flex;flex-direction:column;gap:28px}
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding:24px 0;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:28px;letter-spacing:1px}
+.badge{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.badge.ok .dot{background:var(--up)}.badge.warn .dot{background:var(--warn)}
+h1,h2{font-family:'Barlow Condensed',sans-serif;font-weight:700;margin:0;letter-spacing:.5px}
+h1{font-size:clamp(36px,6vw,56px);line-height:1}h2{font-size:28px}
+.lead{margin:8px 0 0;color:var(--muted);max-width:640px;line-height:1.5}
+.tiles,.grid,.row{display:flex;flex-wrap:wrap;gap:16px}
+.tile{flex:1 1 200px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:6px}
+.tile .l{font-size:13px;color:var(--muted)}
+.num{font-family:'Barlow Condensed',sans-serif;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.tile .num{font-size:40px}
+.up{color:var(--up)}.down{color:var(--down)}.flat{color:var(--muted)}
+.card{flex:1 1 340px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:18px}
+a.card:hover{border-color:var(--line2)}
+.card.soon{opacity:.7}
+.ch{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.gname{display:flex;align-items:center;gap:10px}.sw{width:12px;height:12px;border-radius:4px}
+.gname b{display:block;font-size:16px}.gname small{color:var(--muted);font-size:13px}
+.pill{font-size:12px;font-weight:600;border:1px solid currentColor;border-radius:999px;padding:4px 10px}
+.pill.ok{color:var(--up)}.pill.warn{color:var(--warn)}.pill.off{color:var(--muted)}
+.cm{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.big{font-size:64px;line-height:.9}
+.dl{font-size:14px;font-weight:600;margin-top:6px}.dl span{font-weight:400;color:var(--muted)}
+.cf{display:flex;justify-content:space-between;gap:12px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.cf b{color:var(--text);font-variant-numeric:tabular-nums}
+.empty{background:var(--card);border:1px dashed var(--line2);border-radius:16px;padding:28px;color:var(--muted);line-height:1.6}
+.back{font-size:14px;color:var(--muted);padding:6px 0;align-self:flex-start}
+.hero{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px}
+.hero .big{font-size:clamp(64px,12vw,96px)}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font:500 14px Inter,sans-serif;min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer}
+.btn[aria-pressed="true"]{font-weight:600}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:16px}
+.panel .hd{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.note{font-size:13px;color:var(--muted)}
+.tbl{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:16px}
+table{width:100%;min-width:640px;border-collapse:collapse;font-size:14px}
+th{text-align:left;color:var(--muted);font-size:12px;font-weight:500;padding:14px 22px;border-bottom:1px solid var(--line)}
+td{padding:14px 22px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.r{text-align:right}
+.foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted)}
