@@ -1,0 +1,12 @@
+{
+  "aomstats-data": {
+    "status": 200,
+    "type": "application/json",
+    "bytes": 83642
+  },
+  "aomstats-data-x": {
+    "status": 200,
+    "type": "application/json",
+    "bytes": 2072
+  }
+}
