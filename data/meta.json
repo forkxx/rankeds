@@ -1,17 +1,21 @@
 {
-  "generatedAt": "2026-11-24T07:41:02.151Z",
+  "generatedAt": "2026-11-24T07:42:44.450Z",
   "games": {
     "chess": {
       "ok": true,
-      "fetchedAt": "2026-11-24T07:41:02.151Z"
+      "fetchedAt": "2026-11-24T07:42:44.450Z"
     },
     "aoe2": {
       "ok": true,
-      "fetchedAt": "2026-11-24T07:41:02.151Z"
+      "fetchedAt": "2026-11-24T07:42:44.450Z"
     },
     "wc3": {
       "ok": true,
-      "fetchedAt": "2026-11-24T07:41:02.151Z"
+      "fetchedAt": "2026-11-24T07:42:44.450Z"
+    },
+    "aom": {
+      "ok": true,
+      "fetchedAt": "2026-11-24T07:42:44.450Z"
     }
   }
 }

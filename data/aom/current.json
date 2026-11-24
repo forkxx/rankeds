@@ -1,0 +1,119 @@
+{
+  "game": "aom",
+  "ok": true,
+  "fetchedAt": "2026-11-24T07:42:46.260Z",
+  "player": {
+    "name": "Oni.Forkxx",
+    "id": "1073742995",
+    "profileUrl": "https://aomstats.io/profile/1073742995",
+    "avatar": "https://avatars.steamstatic.com/97c333d7bf9ea439976c9771e89637fefa268bba_medium.jpg"
+  },
+  "modes": [
+    {
+      "id": "team",
+      "label": "Team Supremacy",
+      "rating": 1379,
+      "peak": 1427,
+      "rank": 837,
+      "tier": null,
+      "wins": 124,
+      "losses": 93,
+      "draws": null,
+      "lastGameAt": "2026-10-02T21:52:01.000Z"
+    },
+    {
+      "id": "1v1",
+      "label": "1v1 Supremacy",
+      "rating": 1399,
+      "peak": 1412,
+      "rank": 905,
+      "tier": null,
+      "wins": 179,
+      "losses": 171,
+      "draws": null,
+      "lastGameAt": "2026-09-11T03:50:05.000Z"
+    }
+  ],
+  "recent": [
+    {
+      "playedAt": "2026-09-11T03:50:05.000Z",
+      "mode": "1v1",
+      "result": "win",
+      "ratingAfter": 1399,
+      "opponent": "isis · tundra",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-09-11T03:50:05.000Z",
+      "mode": "1v1",
+      "result": "loss",
+      "ratingAfter": 1385,
+      "opponent": "set · tundra",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-09-11T03:29:37.000Z",
+      "mode": "1v1",
+      "result": "loss",
+      "ratingAfter": 1402,
+      "opponent": "loki · mount olympus",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-09-11T03:29:37.000Z",
+      "mode": "1v1",
+      "result": "win",
+      "ratingAfter": 1382,
+      "opponent": "hades · mount olympus",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-09-11T02:50:32.000Z",
+      "mode": "1v1",
+      "result": "win",
+      "ratingAfter": 1435,
+      "opponent": "loki · nile shallows",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-09-11T02:50:32.000Z",
+      "mode": "1v1",
+      "result": "loss",
+      "ratingAfter": 1363,
+      "opponent": "odin · nile shallows",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-09-11T02:30:03.000Z",
+      "mode": "1v1",
+      "result": "win",
+      "ratingAfter": 1377,
+      "opponent": "poseidon · mount olympus",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-09-11T02:30:03.000Z",
+      "mode": "1v1",
+      "result": "loss",
+      "ratingAfter": 1353,
+      "opponent": "amaterasu · mount olympus",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-09-11T02:03:07.000Z",
+      "mode": "1v1",
+      "result": "loss",
+      "ratingAfter": 1369,
+      "opponent": "amaterasu · oasis",
+      "detail": null
+    },
+    {
+      "playedAt": "2026-09-11T02:03:07.000Z",
+      "mode": "1v1",
+      "result": "win",
+      "ratingAfter": 1361,
+      "opponent": "isis · oasis",
+      "detail": null
+    }
+  ]
+}
