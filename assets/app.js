@@ -7,7 +7,7 @@ const GAMES = [
 ];
 const DAY = 86400000;
 const $app = document.getElementById('app');
-const state = { meta: null, data: {}, range: 30, mode: null, hrange: 90 };
+const state = { meta: null, data: {}, range: 30, mode: null, hrange: 90, goals: [] };
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nf = new Intl.NumberFormat('pt-BR');
@@ -21,6 +21,7 @@ async function getJSON(path) {
 
 async function load() {
   state.meta = await getJSON('data/meta.json');
+  state.goals = (await getJSON('config/goals.json')) || [];
   await Promise.all(GAMES.map(async (g) => {
     const [current, history] = await Promise.all([getJSON(`data/${g.id}/current.json`), getJSON(`data/${g.id}/history.json`)]);
     state.data[g.id] = { current, history: history || {} };
@@ -212,10 +213,95 @@ function detail(id) {
       <div class="cf" style="border:0;padding:0"><span>Fonte: ${esc(g.source || g.name)} · coletado ${ago(cur.fetchedAt)}</span>${cur.player?.profileUrl ? `<a href="${esc(cur.player.profileUrl)}" rel="noopener" style="color:var(--text);text-decoration:underline">Abrir perfil</a>` : ''}</div></section>`;
 }
 
+
+const dateFmt = (t) => new Date(t).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).replace(/\./g, '');
+
+// Calcula progresso, ritmo, previsão e estado de uma meta de rating.
+function evalGoal(goal) {
+  const g = GAMES.find((x) => x.id === goal.game), d = state.data[goal.game], cur = d?.current;
+  const mode = cur?.modes?.find((m) => m.id === goal.mode);
+  const base = { goal, g, mode, label: mode?.label ?? goal.mode };
+  if (!g || !mode) return { ...base, status: 'nodata' };
+  const pts = toPts(d.history[mode.id]);
+  const now = mode.rating;
+  const created = goal.createdAt ? Date.parse(goal.createdAt + 'T00:00:00Z') : null;
+  let start = goal.start;
+  if (start == null) {
+    const before = created ? pts.filter((p) => p.t <= created).pop() : null;
+    start = (before ?? pts[0])?.v ?? now;
+  }
+  const done = now >= goal.target;
+  const pct = done ? 100 : Math.max(0, Math.min(100, Math.round(((now - start) / (goal.target - start || 1)) * 100)));
+  const span = pts.length > 1 ? pts[pts.length - 1].t - pts[0].t : 0;
+  const dl = delta(pts, 30);
+  const pace = dl && span >= 7 * DAY ? dl.value * (30 / Math.min(30, Math.round(span / DAY))) : null; // pontos por 30 dias
+  const deadline = goal.deadline ? Date.parse(goal.deadline + 'T00:00:00Z') : null;
+  const daysLeft = deadline ? Math.ceil((deadline - Date.now()) / DAY) : null;
+  let forecast = null;
+  if (!done && pace != null && pace > 0) forecast = Date.now() + ((goal.target - now) / pace) * 30 * DAY;
+  let status = 'going';
+  if (done) status = 'done';
+  else if (deadline && daysLeft < 0) status = 'late';
+  else if (deadline && pace != null) status = forecast != null && forecast <= deadline ? 'ontrack' : 'late';
+  return { ...base, now, start, pct, pace, deadline, daysLeft, forecast, status };
+}
+
+const STATUS = {
+  done: ['Atingida ✓', 'done'], ontrack: ['No ritmo', 'ok'], late: ['Atrasada', 'warn'], going: ['Em andamento', 'ok'], nodata: ['Sem dados', 'off'],
+};
+
+function goalCard(e) {
+  const [st, cls] = STATUS[e.status];
+  if (e.status === 'nodata') {
+    return `<article class="card gcard soon"><div class="ch"><div class="gname"><span class="sw" style="background:${e.g?.color ?? '#9AA4B2'}"></span><div><b>${esc(e.g?.name ?? e.goal.game)}</b><small>${esc(e.goal.mode)}</small></div></div><span class="pill off">${st}</span></div><div class="note">Ainda não há dados desse modo. Confira o jogo e o modo em config/goals.json.</div></article>`;
+  }
+  const color = e.g.color;
+  const paceTxt = e.status === 'done' ? 'meta atingida' : e.pace == null ? 'coletando histórico' : e.pace > 0 ? `▲ +${Math.round(e.pace)} em 30 dias` : e.pace < 0 ? `▼ −${Math.abs(Math.round(e.pace))} em 30 dias` : '＝ 0 em 30 dias';
+  const paceCls = e.status === 'done' ? 'blue' : e.pace == null ? 'flat' : e.pace > 0 ? 'up' : e.pace < 0 ? 'down' : 'flat';
+  const dlTxt = e.deadline ? `${dateFmt(e.deadline)} (${e.daysLeft >= 0 ? `faltam ${e.daysLeft} dias` : `venceu há ${-e.daysLeft} dias`})` : 'sem prazo';
+  let fc;
+  if (e.status === 'done') fc = 'Meta atingida';
+  else if (e.forecast != null) fc = e.forecast > Date.now() + 3 * 365 * DAY ? 'Previsão: daqui a mais de 3 anos' : `Previsão: ${dateFmt(e.forecast)}`;
+  else fc = e.pace == null ? 'Previsão após mais coletas' : 'Sem previsão com o ritmo atual';
+  const goalTxt = `Chegar a ${nf.format(e.goal.target)} de rating${e.deadline ? '' : ', sem prazo'}`;
+  return `<article class="card gcard">
+    <div class="ch"><div class="gname"><span class="sw" style="background:${color}"></span><div><b>${esc(e.g.name)}</b><small>${esc(e.label)}</small></div></div><span class="pill ${cls}">${st}</span></div>
+    <div class="goal">${goalTxt}</div>
+    <div class="gnum"><span class="num big" style="font-size:56px">${nf.format(e.now)}</span><span class="arrow">→</span><span class="num" style="font-size:36px;line-height:.9;color:var(--muted)">${nf.format(e.goal.target)}</span></div>
+    <div style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span>Progresso desde a criação da meta (${nf.format(e.start)})</span><b style="color:var(--text)">${e.pct}%</b></div><div class="bar" role="progressbar" aria-valuenow="${e.pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso da meta"><div style="width:${e.pct}%;background:${color}"></div></div></div>
+    <div class="cf"><span>Prazo <b>${dlTxt}</b></span><span>Ritmo <b class="${paceCls}">${paceTxt}</b></span><span>${fc}</span></div></article>`;
+}
+
+function goalsPage() {
+  const evals = state.goals.map(evalGoal);
+  const active = evals.filter((e) => e.status !== 'done' && e.status !== 'nodata').length;
+  const done = evals.filter((e) => e.status === 'done').length;
+  const late = evals.filter((e) => e.status === 'late').length;
+  const next = evals.filter((e) => e.deadline && e.status !== 'done' && e.daysLeft >= 0).map((e) => e.daysLeft).sort((a, b) => a - b)[0];
+  const sample = '{ "game": "chess", "mode": "rapid", "type": "rating",\n  "target": 800, "deadline": "2027-03-31", "createdAt": "2026-11-24" }';
+  $app.innerHTML = `
+    <section class="ghd"><div><h1>Metas</h1><p class="lead">Onde você quer chegar em cada jogo, quanto já andou e se o ritmo atual dá conta do prazo.</p></div>
+      <a class="cta" href="https://github.com/forkxx/rankeds/edit/main/config/goals.json" target="_blank" rel="noopener">+ Nova meta</a></section>
+    <section class="tiles">
+      <div class="tile"><span class="l">Metas ativas</span><span class="num">${active}</span></div>
+      <div class="tile"><span class="l">Atingidas</span><span class="num blue">✓ ${done}</span></div>
+      <div class="tile"><span class="l">Atrasadas</span><span class="num amber">! ${late}</span></div>
+      <div class="tile"><span class="l">Próximo prazo</span><span class="num">${next != null ? `${next} dias` : '—'}</span></div>
+    </section>
+    ${evals.length ? `<section class="grid">${evals.map(goalCard).join('')}</section>` : '<div class="empty">Nenhuma meta ainda. Use “+ Nova meta” para adicionar a primeira.</div>'}
+    <section class="panel"><h2>Como adicionar ou editar metas</h2>
+      <span class="note">O site é estático e não grava dados: as metas ficam no arquivo <b style="color:var(--text)">config/goals.json</b> do repositório. Clique em “+ Nova meta”, acrescente uma linha como a abaixo e salve (commit). O site atualiza em 1 ou 2 minutos.</span>
+      <pre class="code">${esc(sample)}</pre>
+      <span class="note">Campos: <b style="color:var(--text)">game</b> (chess, aoe2, wc3, aom), <b style="color:var(--text)">mode</b> (id do modo, como rapid, rm_1v1, 1v1_human, 1v1), <b style="color:var(--text)">target</b>, <b style="color:var(--text)">deadline</b> (ou null) e <b style="color:var(--text)">createdAt</b>. Opcional: <b style="color:var(--text)">start</b> para fixar o rating inicial.</span></section>
+    <p class="note">Progresso = (rating atual − rating inicial) ÷ (meta − rating inicial). A previsão extrapola o ritmo dos últimos 30 dias (precisa de pelo menos 7 dias de histórico).</p>`;
+}
+
 function render() {
   setBadge();
   const m = location.hash.match(/^#\/(\w+)/);
-  if (m) detail(m[1]); else home();
+  const route = m ? m[1] : 'home';
+  document.querySelectorAll('[data-nav]').forEach((a) => (a.dataset.nav === route || (route !== 'metas' && a.dataset.nav === 'home')) ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
+  if (route === 'metas') goalsPage(); else if (m) detail(m[1]); else home();
 }
 
 $app.addEventListener('click', (e) => {

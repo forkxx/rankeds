@@ -1,0 +1,6 @@
+[
+  { "game": "chess", "mode": "rapid",     "type": "rating", "target": 760,  "deadline": "2027-01-31", "createdAt": "2026-11-24" },
+  { "game": "aoe2",  "mode": "rm_1v1",    "type": "rating", "target": 1050, "deadline": "2027-03-31", "createdAt": "2026-11-24" },
+  { "game": "wc3",   "mode": "1v1_human", "type": "rating", "target": 1700, "deadline": null,         "createdAt": "2026-11-24" },
+  { "game": "aom",   "mode": "1v1",       "type": "rating", "target": 1450, "deadline": "2027-03-31", "createdAt": "2026-11-24" }
+]
