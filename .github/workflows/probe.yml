@@ -1,0 +1,24 @@
+name: probe
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/probe.mjs
+      - name: Commitar amostras
+        run: |
+          git config user.name "rankeds-bot"
+          git config user.email "rankeds-bot@users.noreply.github.com"
+          git add docs/samples
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(probe): amostras de APIs"
+            git pull --rebase
+            git push
+          fi
