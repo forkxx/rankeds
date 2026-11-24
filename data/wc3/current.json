@@ -1,7 +1,7 @@
 {
   "game": "wc3",
   "ok": true,
-  "fetchedAt": "2026-11-24T08:09:40.491Z",
+  "fetchedAt": "2026-11-24T08:11:16.662Z",
   "player": {
     "name": "Forkxx",
     "id": "Forkxx#1480",
@@ -21,6 +21,8 @@
       "losses": 28,
       "draws": null,
       "lastGameAt": "2026-11-18T21:55:42.825Z",
+      "season": 25,
+      "stale": false,
       "percentile": 19.1
     },
     {
@@ -34,6 +36,8 @@
       "losses": 35,
       "draws": null,
       "lastGameAt": "2026-11-18T22:14:25.323Z",
+      "season": 25,
+      "stale": false,
       "percentile": 25.1
     },
     {
@@ -47,6 +51,8 @@
       "losses": 19,
       "draws": null,
       "lastGameAt": "2026-11-21T03:02:54.985Z",
+      "season": 25,
+      "stale": false,
       "percentile": 27.4
     },
     {
@@ -60,6 +66,8 @@
       "losses": 1,
       "draws": null,
       "lastGameAt": "2026-11-07T18:49:03.462Z",
+      "season": 25,
+      "stale": false,
       "percentile": 20.2
     },
     {
@@ -73,7 +81,114 @@
       "losses": 1,
       "draws": null,
       "lastGameAt": "2026-09-03T22:00:10.364Z",
+      "season": 25,
+      "stale": false,
       "percentile": 10.7
+    },
+    {
+      "id": "1v1_random",
+      "label": "1v1 Random",
+      "rating": 1562,
+      "peak": null,
+      "rank": 40,
+      "tier": null,
+      "wins": 2,
+      "losses": 7,
+      "draws": null,
+      "lastGameAt": "2026-03-10T04:13:36.699Z",
+      "season": 24,
+      "stale": true,
+      "percentile": 17.6
+    },
+    {
+      "id": "2v2",
+      "label": "2v2",
+      "rating": 1460,
+      "peak": null,
+      "rank": null,
+      "tier": null,
+      "wins": 1,
+      "losses": 0,
+      "draws": null,
+      "lastGameAt": "2026-06-06T18:26:55.277Z",
+      "season": 24,
+      "stale": true,
+      "percentile": 54.1
+    },
+    {
+      "id": "1v1_undead",
+      "label": "1v1 Undead",
+      "rating": 1488,
+      "peak": null,
+      "rank": 44,
+      "tier": null,
+      "wins": 4,
+      "losses": 1,
+      "draws": null,
+      "lastGameAt": "2026-06-13T04:32:01.389Z",
+      "season": 24,
+      "stale": true,
+      "percentile": 22.9
+    },
+    {
+      "id": "2v2_at",
+      "label": "2v2 AT",
+      "rating": 1477,
+      "peak": null,
+      "rank": 23,
+      "tier": null,
+      "wins": 3,
+      "losses": 3,
+      "draws": null,
+      "lastGameAt": null,
+      "season": 23,
+      "stale": true,
+      "percentile": 58.5
+    },
+    {
+      "id": "4v4",
+      "label": "4v4",
+      "rating": 1541,
+      "peak": null,
+      "rank": null,
+      "tier": null,
+      "wins": 1,
+      "losses": 1,
+      "draws": null,
+      "lastGameAt": "2025-12-10T03:19:18.180Z",
+      "season": 23,
+      "stale": true,
+      "percentile": 35.4
+    },
+    {
+      "id": "4v4_at",
+      "label": "4v4 AT",
+      "rating": 1704,
+      "peak": null,
+      "rank": null,
+      "tier": null,
+      "wins": 2,
+      "losses": 2,
+      "draws": null,
+      "lastGameAt": null,
+      "season": 21,
+      "stale": true,
+      "percentile": 38.5
+    },
+    {
+      "id": "ds_at",
+      "label": "DS AT",
+      "rating": 1394,
+      "peak": null,
+      "rank": 39,
+      "tier": null,
+      "wins": 1,
+      "losses": 4,
+      "draws": null,
+      "lastGameAt": null,
+      "season": 21,
+      "stale": true,
+      "percentile": 59
     }
   ],
   "recent": [

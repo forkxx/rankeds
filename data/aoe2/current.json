@@ -1,7 +1,7 @@
 {
   "game": "aoe2",
   "ok": true,
-  "fetchedAt": "2026-11-24T08:09:35.810Z",
+  "fetchedAt": "2026-11-24T08:11:13.190Z",
   "player": {
     "name": "Oni.Forkxx",
     "id": "702248",
@@ -20,7 +20,7 @@
       "losses": 57,
       "draws": null,
       "lastGameAt": "2026-09-10T22:34:06.000Z",
-      "rankTotal": 47645
+      "rankTotal": 47644
     },
     {
       "id": "rm_team",
@@ -33,7 +33,7 @@
       "losses": 55,
       "draws": null,
       "lastGameAt": "2026-06-02T21:27:23.000Z",
-      "rankTotal": 72531
+      "rankTotal": 72532
     }
   ],
   "recent": []
