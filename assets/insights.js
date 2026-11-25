@@ -293,8 +293,9 @@ function cardPage() {
   const svg = `<svg id="sharecard" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Cartão do jogador ${esc(handle)}">
     <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#121821"/><stop offset="1" stop-color="#0A0D12"/></linearGradient></defs>
     <rect width="1200" height="630" fill="url(#bg)"/>
-    <text x="50" y="96" font-family="'Barlow Condensed','Arial Narrow',Arial,sans-serif" font-weight="700" font-size="72" fill="#FFFFFF">${esc(handle.toUpperCase())}</text>
-    <text x="50" y="140" font-family="Inter,Arial,sans-serif" font-size="24" fill="#9AA4B2">Evolução competitiva · ${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</text>
+    ${state.display?.avatar ? `<image href="${esc(state.display.avatar)}" x="44" y="22" width="140" height="140" preserveAspectRatio="xMidYMid meet"/>` : ''}
+    <text x="${state.display?.avatar ? 200 : 50}" y="96" font-family="'Barlow Condensed','Arial Narrow',Arial,sans-serif" font-weight="700" font-size="72" fill="#FFFFFF">${esc(handle.toUpperCase())}</text>
+    <text x="${state.display?.avatar ? 200 : 50}" y="140" font-family="Inter,Arial,sans-serif" font-size="24" fill="#9AA4B2">Evolução competitiva · ${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</text>
     ${cols}<text x="1150" y="606" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="18" fill="#5C6675">forkxx.github.io/rankeds</text></svg>`;
   $app.innerHTML = `<section class="ghd"><div><h1>Cartão do jogador</h1><p class="lead">Um resumo visual dos seus ratings principais, pronto para postar no Discord ou nas redes.</p></div>
       <button class="cta" data-act="dlcard">Baixar PNG</button></section>
