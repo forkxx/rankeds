@@ -277,49 +277,6 @@ function projection(gid, mode, all) {
 }
 
 // ---- 6. Cartão do jogador ----
-function cardPage() {
-  const rows = GAMES.map((g) => { const d = state.data[g.id]; if (!d?.current) return null; const m = mainModeOf(d.current); if (!m) return null; const pts = toPts(d.history[m.id]); const dl = delta(pts, 30); return { g, m, dl, peak: peakOf(m, pts) }; }).filter(Boolean);
-  const handle = state.display?.handle || 'forkxx';
-  const colW = rows.length ? 1100 / rows.length : 1100;
-  const cols = rows.map((r, i) => { const x = 50 + i * colW, d = r.dl?.value ?? 0; return `<g transform="translate(${x},0)">
-      <rect x="0" y="190" width="${colW - 16}" height="340" rx="22" fill="#161B22" stroke="#2A323D"/>
-      ${state.display?.icons?.[r.g.id] ? `<image href="${esc(state.display.icons[r.g.id])}" x="22" y="210" width="44" height="44" preserveAspectRatio="xMidYMid meet"/>` : `<g transform="translate(24,214) scale(1.5)" fill="${r.g.color}">${ICONS[r.g.id]}</g>`}
-      <text x="76" y="240" font-family="Inter,Arial,sans-serif" font-size="19" font-weight="600" fill="#E6EAF0">${esc(r.g.name)}</text>
-      <text x="24" y="296" font-family="Inter,Arial,sans-serif" font-size="20" fill="#9AA4B2">${esc(r.m.label)}</text>
-      <text x="24" y="392" font-family="'Barlow Condensed','Arial Narrow',Arial,sans-serif" font-weight="700" font-size="98" fill="#FFFFFF">${nf.format(r.m.rating)}</text>
-      <text x="24" y="440" font-family="Inter,Arial,sans-serif" font-size="24" font-weight="600" fill="${d > 0 ? '#4ADE80' : d < 0 ? '#F87171' : '#9AA4B2'}">${r.dl ? sgn(d) + ' em 30 dias' : 'coletando histórico'}</text>
-      <text x="24" y="490" font-family="Inter,Arial,sans-serif" font-size="20" fill="#9AA4B2">Pico ${nf.format(r.peak)}</text>
-      <rect x="0" y="518" width="${colW - 16}" height="12" rx="6" fill="${r.g.color}"/></g>`; }).join('');
-  const svg = `<svg id="sharecard" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Cartão do jogador ${esc(handle)}">
-    <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#121821"/><stop offset="1" stop-color="#0A0D12"/></linearGradient></defs>
-    <rect width="1200" height="630" fill="url(#bg)"/>
-    ${state.display?.avatar ? `<image href="${esc(state.display.avatar)}" x="44" y="22" width="140" height="140" preserveAspectRatio="xMidYMid meet"/>` : ''}
-    <text x="${state.display?.avatar ? 200 : 50}" y="96" font-family="'Barlow Condensed','Arial Narrow',Arial,sans-serif" font-weight="700" font-size="72" fill="#FFFFFF">${esc(handle.toUpperCase())}</text>
-    <text x="${state.display?.avatar ? 200 : 50}" y="140" font-family="Inter,Arial,sans-serif" font-size="24" fill="#9AA4B2">Evolução competitiva · ${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</text>
-    ${cols}<text x="1150" y="606" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="18" fill="#5C6675">forkxx.github.io/rankeds</text></svg>`;
-  $app.innerHTML = `<section class="ghd"><div><h1>Cartão do jogador</h1><p class="lead">Um resumo visual dos seus ratings principais, pronto para postar no Discord ou nas redes.</p></div>
-      <button class="cta" data-act="dlcard">Baixar PNG</button></section>
-    ${rows.length ? `<div class="sharewrap">${svg}</div>` : '<div class="empty">Ainda não há dados para montar o cartão.</div>'}
-    <span class="note">O cartão usa o modo principal de cada jogo (o mais jogado recentemente entre os modos de destaque). Mude os destaques em config/display.json.</span>`;
-}
-async function downloadCard() {
-  const live = document.getElementById('sharecard'); if (!live) return;
-  const svg = live.cloneNode(true);
-  for (const im of svg.querySelectorAll('image')) { // imagens externas não carregam dentro de SVG exportado: embute em base64
-    try {
-      const blob = await (await fetch(im.getAttribute('href'))).blob();
-      const url = await new Promise((ok) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(blob); });
-      im.setAttribute('href', url);
-    } catch { im.remove(); }
-  }
-  const img = new Image();
-  img.onload = () => {
-    const c = document.createElement('canvas'); c.width = 2400; c.height = 1260;
-    const x = c.getContext('2d'); x.drawImage(img, 0, 0, 2400, 1260);
-    c.toBlob((b) => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'rankeds-cartao.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); });
-  };
-  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svg));
-}
 
 // ---- Sessões de jogo (partidas separadas por menos de 60 min formam uma sessão) ----
 function sessionsData() {
