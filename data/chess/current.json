@@ -1,7 +1,7 @@
 {
   "game": "chess",
   "ok": true,
-  "fetchedAt": "2026-11-25T08:37:47.759Z",
+  "fetchedAt": "2026-11-25T21:43:49.493Z",
   "player": {
     "name": "Maximilian Rox",
     "id": "163731237",
@@ -12,14 +12,14 @@
     {
       "id": "rapid",
       "label": "Rapid",
-      "rating": 701,
+      "rating": 710,
       "peak": 886,
       "rank": null,
       "tier": null,
-      "wins": 225,
+      "wins": 226,
       "losses": 227,
       "draws": 27,
-      "lastGameAt": "2026-11-25T08:32:44.000Z"
+      "lastGameAt": "2026-11-25T09:04:31.000Z"
     },
     {
       "id": "blitz",
@@ -59,6 +59,14 @@
     }
   ],
   "recent": [
+    {
+      "playedAt": "2026-11-25T09:04:31.000Z",
+      "mode": "rapid",
+      "result": "win",
+      "ratingAfter": 710,
+      "opponent": "krishnavardhan21 (733)",
+      "detail": "https://www.chess.com/game/live/187970831110"
+    },
     {
       "playedAt": "2026-11-25T08:32:44.000Z",
       "mode": "rapid",
@@ -130,14 +138,6 @@
       "ratingAfter": 646,
       "opponent": "pawansinghwayu (498)",
       "detail": "https://www.chess.com/game/live/186269979894"
-    },
-    {
-      "playedAt": "2026-10-27T23:25:18.000Z",
-      "mode": "rapid",
-      "result": "loss",
-      "ratingAfter": 641,
-      "opponent": "emanuel_vitr (719)",
-      "detail": "https://www.chess.com/game/live/186065847430"
     }
   ]
 }
