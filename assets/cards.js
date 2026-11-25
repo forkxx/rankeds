@@ -12,6 +12,12 @@ const fitNum = (str, maxW, size) => { const em = [...String(str)].reduce((a, ch)
 const dCol = (d) => (d > 0 ? '#4ADE80' : d < 0 ? '#F87171' : '#9AA4B2');
 const dTxt = (r, suffix = ' em 30 dias') => (r.dl ? sgn(r.d30) + suffix : 'coletando histórico');
 const todayStr = () => new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+// Marca RANKEDS (mesmo símbolo do menu do site). a: 'start' | 'middle' | 'end'.
+function brandMark(x, base, size, o = {}) {
+  const fill = o.fill ?? '#E6EAF0', ink = o.ink ?? '#0E1116', fs = Math.round(size * 0.95), tw = fs * 3.9, total = size * 1.3 + tw;
+  const x0 = o.a === 'middle' ? x - total / 2 : o.a === 'end' ? x - total : x, y0 = base - size * 0.82;
+  return `<g transform="translate(${x0.toFixed(1)},${y0.toFixed(1)}) scale(${(size / 32).toFixed(3)})"><rect x="2" y="2" width="28" height="28" rx="7" fill="${fill}"/><path d="M8 22 L13 15 L18 19 L24 9" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g><text x="${(x0 + size * 1.3).toFixed(1)}" y="${base}" font-family="${FB}" font-size="${fs}" font-weight="700" letter-spacing="${(fs * 0.06).toFixed(1)}" fill="${o.text ?? '#E6EAF0'}">RANKEDS</text>`;
+}
 const handleOf = () => (state.display?.handle || 'forkxx');
 
 // Modo de cada jogo no cartão: o que mais ganhou rating em 30 dias. AoE2 e AoM partem do 1v1 e só trocam para Team se ele ganhou mais.
@@ -47,7 +53,7 @@ function wrap(w, h, inner, defs = '') {
 }
 function lsHeader(extra = '') {
   const av = state.display?.avatar, x = av ? 200 : 50;
-  return `${av ? `<image href="${esc(av)}" x="44" y="22" width="140" height="140" preserveAspectRatio="xMidYMid meet"/>` : ''}${TX(x, 96, handleOf().toUpperCase(), { size: 72, w: 700, fill: '#FFFFFF', fam: 'b' })}${TX(x, 140, 'Evolução competitiva · ' + todayStr(), { size: 24 })}${extra}`;
+  return `${av ? `<image href="${esc(av)}" x="44" y="22" width="140" height="140" preserveAspectRatio="xMidYMid meet"/>` : ''}${TX(x, 96, handleOf().toUpperCase(), { size: 72, w: 700, fill: '#FFFFFF', fam: 'b' })}${brandMark(x, 140, 30, { a: 'start' })}${extra}`;
 }
 const footerUrl = () => '';
 
@@ -84,11 +90,10 @@ const SLIDES = [
     build: (rows) => wrap(1200, 630, lsHeader() + lsCols(rows, { glow: true }) + footerUrl(), glowDefs(rows)) },
   { id: 'pilulas', name: 'Variação em pílula', w: 1200, h: 630, scale: 2, hint: 'Paisagem 1200×630 · variação em destaque',
     build: (rows) => wrap(1200, 630, lsHeader() + lsCols(rows, { pill: true }) + footerUrl()) },
-  { id: 'marca', name: 'Marca e textura', w: 1200, h: 630, scale: 2, hint: 'Paisagem 1200×630 · logo Rankeds e grade no fundo',
+  { id: 'marca', name: 'Textura', w: 1200, h: 630, scale: 2, hint: 'Paisagem 1200×630 · grade sutil no fundo',
     build: (rows) => {
       const pat = '<pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#FFFFFF" stroke-opacity=".045"/></pattern>';
-      const logo = `<g transform="translate(884,44)"><rect width="48" height="48" rx="12" fill="#E6EAF0"/><path d="M11 34 L21 22 L29 28 L38 14" fill="none" stroke="#0E1116" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></g>${TX(1150, 80, 'RANKEDS', { size: 38, w: 700, fill: '#E6EAF0', fam: 'b', a: 'end' })}`;
-      return wrap(1200, 630, `<rect width="1200" height="630" fill="url(#grid)"/>` + lsHeader() + logo + lsCols(rows) + footerUrl(), pat);
+      return wrap(1200, 630, `<rect width="1200" height="630" fill="url(#grid)"/>` + lsHeader() + lsCols(rows) + footerUrl(), pat);
     } },
   { id: 'semana', name: 'Com a semana', w: 1200, h: 630, scale: 2, hint: 'Paisagem 1200×630 · rodapé com partidas, winrate e sequência',
     build: (rows) => {
@@ -133,7 +138,7 @@ const SLIDES = [
   { id: 'stories', name: 'Stories 9:16', w: 1080, h: 1920, scale: 1, hint: 'Vertical 1080×1920 · Stories do Instagram e status do WhatsApp',
     build: (rows) => {
       const av = state.display?.avatar;
-      const head = (av ? `<image href="${esc(av)}" x="390" y="90" width="300" height="300" preserveAspectRatio="xMidYMid meet"/>` : '') + TX(540, 520, handleOf().toUpperCase(), { size: 150, w: 700, fill: '#FFFFFF', fam: 'b', a: 'middle' }) + TX(540, 580, 'Evolução competitiva · ' + todayStr(), { size: 34, a: 'middle' });
+      const head = (av ? `<image href="${esc(av)}" x="390" y="90" width="300" height="300" preserveAspectRatio="xMidYMid meet"/>` : '') + TX(540, 520, handleOf().toUpperCase(), { size: 150, w: 700, fill: '#FFFFFF', fam: 'b', a: 'middle' }) + brandMark(540, 590, 46, { a: 'middle' });
       const cards = rows.map((r, i) => { const y = 650 + i * 292, dc = dCol(r.d30), rt = nf.format(r.m.rating);
         return `<rect x="60" y="${y}" width="960" height="270" rx="34" fill="#161B22" stroke="#2A323D"/><rect x="60" y="${y}" width="16" height="270" rx="8" fill="${r.g.color}"/>${gIco(r, 112, y + 38, 96)}${TX(228, y + 86, r.title, { size: 42, w: 600, fill: '#E6EAF0' })}${TX(228, y + 130, r.sub, { size: 30 })}${TX(112, y + 232, dTxt(r), { size: 34, w: 600, fill: dc })}${TX(980, y + 188, rt, { size: fitNum(rt, 440, 190), w: 700, fill: '#FFFFFF', fam: 'b', a: 'end' })}${TX(980, y + 238, 'Pico ' + nf.format(r.peak), { size: 28, a: 'end' })}`; }).join('');
       return wrap(1080, 1920, head + cards);
@@ -141,7 +146,7 @@ const SLIDES = [
   { id: 'quadrado', name: 'Quadrado 1:1', w: 1080, h: 1080, scale: 1, hint: 'Quadrado 1080×1080 · feed do Instagram e foto de comunidade',
     build: (rows) => {
       const av = state.display?.avatar;
-      const head = (av ? `<image href="${esc(av)}" x="56" y="36" width="170" height="170" preserveAspectRatio="xMidYMid meet"/>` : '') + TX(av ? 248 : 60, 130, handleOf().toUpperCase(), { size: 110, w: 700, fill: '#FFFFFF', fam: 'b' }) + TX(av ? 250 : 62, 182, 'Evolução competitiva · ' + todayStr(), { size: 28 });
+      const head = (av ? `<image href="${esc(av)}" x="56" y="36" width="170" height="170" preserveAspectRatio="xMidYMid meet"/>` : '') + TX(av ? 248 : 60, 130, handleOf().toUpperCase(), { size: 110, w: 700, fill: '#FFFFFF', fam: 'b' }) + brandMark(av ? 250 : 62, 184, 34, { a: 'start' });
       const cards = rows.slice(0, 4).map((r, i) => { const x = 60 + (i % 2) * 480, y = 240 + Math.floor(i / 2) * 360, rt = nf.format(r.m.rating);
         return `<rect x="${x}" y="${y}" width="460" height="340" rx="30" fill="#161B22" stroke="#2A323D"/>${gIco(r, x + 28, y + 26, 64)}${TX(x + 110, y + 70, r.title, { size: 28, w: 600, fill: '#E6EAF0' })}${TX(x + 28, y + 128, r.sub, { size: 26 })}${TX(x + 28, y + 244, rt, { size: fitNum(rt, 404, 124), w: 700, fill: '#FFFFFF', fam: 'b' })}${TX(x + 28, y + 292, dTxt(r), { size: 26, w: 600, fill: dCol(r.d30) })}<rect x="${x}" y="${y + 326}" width="460" height="14" rx="7" fill="${r.g.color}"/>`; }).join('');
       return wrap(1080, 1080, head + cards);
@@ -152,7 +157,7 @@ const SLIDES = [
       const defs = '<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F5D77A"/><stop offset=".5" stop-color="#C9962B"/><stop offset="1" stop-color="#F5D77A"/></linearGradient>';
       let s = `<rect x="60" y="40" width="780" height="1180" rx="52" fill="url(#gold)"/><rect x="78" y="58" width="744" height="1144" rx="38" fill="#1A1608"/>`;
       if (av) s += `<image href="${esc(av)}" x="260" y="96" width="380" height="380" preserveAspectRatio="xMidYMid meet"/>`;
-      s += TX(450, 600, handleOf().toUpperCase(), { size: 150, w: 700, fill: gold, fam: 'b', a: 'middle' }) + TX(450, 652, 'Evolução competitiva · ' + todayStr(), { size: 26, fill: dim, a: 'middle' });
+      s += TX(450, 600, handleOf().toUpperCase(), { size: 150, w: 700, fill: gold, fam: 'b', a: 'middle' }) + brandMark(450, 660, 38, { a: 'middle', fill: gold, ink: '#1A1608', text: gold });
       rows.slice(0, 4).forEach((r, i) => { const x = 110 + (i % 2) * 350, y = 700 + Math.floor(i / 2) * 220, rt = nf.format(r.m.rating);
         s += `<rect x="${x}" y="${y}" width="320" height="196" rx="24" fill="#2A230F" stroke="${dim}" stroke-opacity=".5"/>${gIco(r, x + 20, y + 18, 52)}${TX(x + 82, y + 52, r.title, { size: 22, w: 700, fill: dim })}${TX(x + 20, y + 140, rt, { size: fitNum(rt, 280, 100), w: 700, fill: '#FFFFFF', fam: 'b' })}${TX(x + 20, y + 176, r.sub + ' · ' + (r.dl ? sgn(r.d30) : '—'), { size: 20, fill: dCol(r.d30) })}`; });
       return wrap(900, 1260, s, defs);
