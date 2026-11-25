@@ -25,6 +25,11 @@ jobs:
           node-version: 20
       - name: Coletar dados
         run: node scripts/collect.mjs
+      - name: Gerar imagem de pré-visualização (Open Graph)
+        run: |
+          npm install --no-save --no-audit --no-fund @resvg/resvg-js
+          node scripts/og.mjs
+        continue-on-error: true
       - name: Commitar dados
         run: |
           git config user.name "rankeds-bot"

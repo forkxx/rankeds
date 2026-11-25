@@ -7,7 +7,7 @@ const GAMES = [
 ];
 const DAY = 86400000;
 const $app = document.getElementById('app');
-const state = { meta: null, data: {}, range: 30, mode: null, hrange: 90, goals: [], display: null, afilter: 'all', tlAll: false, irange: 90, hhide: [], hperiod: 30, hsort: 'default', hopen: [], cslide: 0 };
+const state = { meta: null, data: {}, range: 30, mode: null, hrange: 90, goals: [], display: null, afilter: 'all', tlAll: false, irange: 90, hhide: [], hperiod: 30, hsort: 'default', hopen: [], cslide: 0, mf: { game: 'all', mode: 'all', result: 'all', q: '', page: 1 }, notes: [] };
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nf = new Intl.NumberFormat('pt-BR');
@@ -23,6 +23,7 @@ async function load() {
   state.meta = await getJSON('data/meta.json');
   state.goals = (await getJSON('config/goals.json')) || [];
   state.display = await getJSON('config/display.json');
+  state.notes = (await getJSON('config/notes.json')) || [];
   await Promise.all(GAMES.map(async (g) => {
     const [current, history, mf] = await Promise.all([getJSON(`data/${g.id}/current.json`), getJSON(`data/${g.id}/history.json`), getJSON(`data/${g.id}/matches.json`)]);
     state.data[g.id] = { current, history: history || {}, matches: mf?.matches || [] };
@@ -173,7 +174,7 @@ function smoothPath(xy) {
   return d;
 }
 
-function chart(pts, color, proj) {
+function chart(pts, color, proj, notes) {
   if (!pts.length) return '<div class="empty">Ainda sem pontos nesse período.</div>';
   const W = 800, H = 280, L = 48, R = 780, T = 20, B = 240;
   const vs = pts.map((p) => p.v), min = Math.min(...vs), max = Math.max(...vs);
@@ -193,9 +194,13 @@ function chart(pts, color, proj) {
     + (proj?.target != null ? `<line x1="${L}" y1="${Y(proj.target).toFixed(1)}" x2="${R}" y2="${Y(proj.target).toFixed(1)}" stroke="#E6EAF0" stroke-opacity=".5" stroke-dasharray="2 5"/><text x="${R}" y="${(Y(proj.target) - 6).toFixed(1)}" text-anchor="end" font-size="12" font-weight="600" fill="#E6EAF0">Meta ${nf.format(proj.target)}</text>` : '')
     + (proj?.target != null && last.v < proj.target ? `<line x1="${X(last.t).toFixed(1)}" y1="${Y(last.v).toFixed(1)}" x2="${X(last.t).toFixed(1)}" y2="${Y(proj.target).toFixed(1)}" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round"/><text x="${(X(last.t) - 8).toFixed(1)}" y="${((Y(last.v) + Y(proj.target)) / 2 + 4).toFixed(1)}" text-anchor="end" font-size="12" font-weight="700" fill="#4ADE80">faltam ${nf.format(proj.target - last.v)}</text>` : '');
   const xl = [0, 1 / 3, 2 / 3, 1].map((f, i) => { const t = t0 + (t1 - t0) * f; return `<text x="${X(t)}" y="264" text-anchor="${i === 0 ? 'start' : i === 3 ? 'end' : 'middle'}" fill="#9AA4B2" font-size="12">${shortDate(t)}</text>`; }).join('');
+  const noteSvg = (notes || []).map((n) => ({ ...n, t: Date.parse(n.date + 'T00:00:00Z') })).filter((n) => Number.isFinite(n.t) && n.t >= t0 && n.t <= t1).map((n, i) => {
+    const x = X(n.t), c = n.color || '#F5B94C', txt = String(n.text || '').slice(0, 22), w = txt.length * 6.6 + 16, px = Math.min(Math.max(x - w / 2, L), R - w), py = (i % 2) * 17 + 1;
+    return `<line x1="${x.toFixed(1)}" y1="${T}" x2="${x.toFixed(1)}" y2="${B}" stroke="${c}" stroke-dasharray="3 4" stroke-opacity=".85"/><rect x="${px.toFixed(1)}" y="${py}" width="${w.toFixed(1)}" height="16" rx="8" fill="${c}"/><text x="${(px + w / 2).toFixed(1)}" y="${py + 11.5}" text-anchor="middle" font-size="11" font-weight="700" fill="#0E1116">${esc(txt)}</text><title>${esc(dateFmt(n.t))} · ${esc(n.text)}</title>`;
+  }).join('');
   const peakX = X(pk.t);
   const meta = JSON.stringify({ p: pts.length > 400 ? pts.filter((_, i) => i % Math.ceil(pts.length / 400) === 0 || i === pts.length - 1).map((p) => [p.t, p.v]) : pts.map((p) => [p.t, p.v]), L, R, T, B, t0, t1, lo, hi });
-  return `<div class="chartwrap" data-chart="${esc(meta)}"><svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;font-family:Inter,sans-serif" role="img" aria-label="Gráfico de rating, de ${min} a ${max}, atual ${last.v}"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".42"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>${grid}${xl}${area}${projSvg}
+  return `<div class="chartwrap" data-chart="${esc(meta)}"><svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;font-family:Inter,sans-serif" role="img" aria-label="Gráfico de rating, de ${min} a ${max}, atual ${last.v}"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".42"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>${grid}${xl}${area}${projSvg}${noteSvg}
     <circle cx="${peakX.toFixed(1)}" cy="${Y(pk.v).toFixed(1)}" r="5" fill="#0E1116" stroke="#E6EAF0" stroke-width="2"/>
     <text x="${Math.min(Math.max(peakX, L + 30), R - 30).toFixed(1)}" y="${(Y(pk.v) - 12).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="600" fill="#E6EAF0">Pico ${pk.v}</text>
     <circle cx="${X(last.t).toFixed(1)}" cy="${Y(last.v).toFixed(1)}" r="5" fill="${color}"/>
@@ -226,8 +231,8 @@ function detail(id) {
       <div class="seg" role="group" aria-label="Modo de jogo">${cur.modes.map((m) => `<button class="segb" data-mode="${m.id}" aria-pressed="${m.id === mode.id}">${esc(m.label)}${m.stale ? ' <small>(T' + m.season + ')</small>' : ''}</button>`).join('')}</div>
     </section>
     <section class="bento"><div class="b8"><div class="panel" style="height:100%"><div class="hd"><h2>Evolução do rating</h2>
-      <div class="btns">${ranges.map(([v, l]) => `<button class="btn" data-range="${v}" aria-pressed="${state.range === v}" ${state.range === v ? 'style="background:#232A33;border-color:#3A4452"' : ''}>${l}</button>`).join('')}</div></div>
-      ${chart(pts, g.color, proj)}
+      <div class="btns"><a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="https://github.com/forkxx/rankeds/edit/main/config/notes.json" target="_blank" rel="noopener">+ Anotação</a>${ranges.map(([v, l]) => `<button class="btn" data-range="${v}" aria-pressed="${state.range === v}" ${state.range === v ? 'style="background:#232A33;border-color:#3A4452"' : ''}>${l}</button>`).join('')}</div></div>
+      ${chart(pts, g.color, proj, (state.notes || []).filter((n) => !n.game || n.game === id))}
       <span class="note">${all.length < 2 ? 'Histórico começou agora: o gráfico se completa a cada coleta.' : `${all.length} dias com dados desde ${shortDate(all[0].t)}.`}${proj?.pts?.length ? ` Linha tracejada: projeção mantendo o ritmo dos últimos 30 dias (${proj.perDay30 >= 0 ? '+' : '−'}${Math.abs(proj.perDay30)} a cada 30 dias).` : ''}</span></div></div>
     <div class="b4"><div class="tiles grid2">
       <div class="tile"><span class="l">Pico histórico</span><span class="num">${mode.peak != null ? nf.format(mode.peak) : '—'}</span></div>
@@ -242,6 +247,7 @@ function detail(id) {
     ${yoy(all, g.color)}
     <section style="display:flex;flex-direction:column;gap:14px"><h2>Partidas recentes</h2>
       ${matchTable(id, mode, recent)}
+      <a class="note" href="#/partidas/${id}/${mode.id}" style="color:var(--text);text-decoration:underline">Ver todas as partidas deste modo →</a>
       <div class="cf" style="border:0;padding:0"><span>Fonte: ${esc(g.source || g.name)} · coletado ${ago(cur.fetchedAt)}</span>${cur.player?.profileUrl ? `<a href="${esc(cur.player.profileUrl)}" rel="noopener" style="color:var(--text);text-decoration:underline">Abrir perfil</a>` : ''}</div></section>`;
 }
 
@@ -329,15 +335,22 @@ function goalsPage() {
     <p class="note">Progresso = (rating atual − rating inicial) ÷ (meta − rating inicial). A previsão extrapola o ritmo dos últimos 30 dias (precisa de pelo menos 7 dias de histórico).</p>`;
 }
 
+function renderGameBar(route) {
+  const gb = document.getElementById('gamebar'); if (!gb || typeof icon !== 'function') return;
+  gb.innerHTML = GAMES.map((g) => `<a class="gchip${route === g.id ? ' on' : ''}" href="#/${g.id}" style="--gc:${g.color}"${route === g.id ? ' aria-current="page"' : ''}>${icon(g.id, 18)}<span>${esc(g.name)}</span></a>`).join('');
+}
+
 function render() {
   setBadge();
   const prevKey = state.lastKey;
   const m = location.hash.match(/^#\/(\w+)/);
   const route = m ? m[1] : 'home';
-  if (location.hash !== state.lastHash) { const mm = location.hash.match(/^#\/\w+\/(\w+)/); if (mm) state.mode = mm[1]; state.lastHash = location.hash; }
-  const navKey = ['metas', 'analises', 'cartao'].includes(route) ? route : 'home';
+  if (location.hash !== state.lastHash && GAMES.some((x) => x.id === route)) { const mm = location.hash.match(/^#\/\w+\/(\w+)/); if (mm) state.mode = mm[1]; state.lastHash = location.hash; }
+  if (location.hash !== state.lastHash) state.lastHash = location.hash;
+  const navKey = ['metas', 'analises', 'cartao', 'partidas'].includes(route) ? route : 'home';
   document.querySelectorAll('[data-nav]').forEach((a) => (a.dataset.nav === navKey ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
-  if (route === 'metas') goalsPage(); else if (route === 'analises') analysisPage(); else if (route === 'cartao') cardPage(); else if (m) detail(m[1]); else home();
+  renderGameBar(route);
+  if (route === 'partidas') matchesPage(); else if (route === 'metas') goalsPage(); else if (route === 'analises') analysisPage(); else if (route === 'cartao') cardPage(); else if (m) detail(m[1]); else home();
   if (typeof afterRender === 'function') afterRender(route, prevKey);
 }
 

@@ -203,3 +203,25 @@ a.card.gc:hover{border-color:var(--gc);box-shadow:0 0 30px -6px color-mix(in srg
 .csinfo{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline}.csinfo span{color:var(--muted);font-size:14px}
 .csdots .btn{min-height:38px;padding:0 14px;font-size:13px}
 @media(max-width:700px){.csnav{width:36px;height:36px;font-size:22px}.cs{gap:6px}}
+
+/* Barra de jogos, navegação inferior, partidas */
+.gamebar{display:flex;gap:10px;padding:14px 0 0;overflow-x:auto;scrollbar-width:none}
+.gamebar::-webkit-scrollbar{display:none}
+.gchip{flex:none;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted);font:500 14px Inter,sans-serif;text-decoration:none;transition:border-color .15s,color .15s}
+.gchip:hover{color:var(--text);border-color:var(--gc)}
+.gchip.on{color:var(--text);font-weight:600;border-color:var(--gc);background:color-mix(in srgb,var(--gc) 16%,var(--card))}
+.bottomnav{display:none}
+.mfilters{display:flex;flex-direction:column;gap:12px}
+.mfrow{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.mfilters .btn{min-height:38px;padding:0 14px;font-size:13px;display:inline-flex;align-items:center;gap:6px}
+.mfilters select,.mfilters input{min-height:38px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font:400 14px Inter,sans-serif;padding:0 12px}
+.mfilters input{flex:1 1 220px;min-width:0}
+.mfpg{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.mfpg .btn{min-height:36px;min-width:36px;padding:0 10px;font-size:13px}.mfpg .btn:disabled{opacity:.4;cursor:default}
+@media(max-width:700px){
+  .mainnav{display:none}
+  .bottomnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(14,17,22,.92);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+  .bottomnav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;color:var(--muted);font:500 11px Inter,sans-serif;text-decoration:none}
+  .bottomnav a[aria-current="page"]{color:var(--text);font-weight:700}
+  body{padding-bottom:78px}
+}
