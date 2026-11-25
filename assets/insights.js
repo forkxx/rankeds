@@ -539,7 +539,7 @@ function homeScore() {
 function homeGoals() {
   const ev = (state.goals || []).map(evalGoal).filter((e) => e.status !== 'nodata');
   if (!ev.length) return '';
-  return `<section class="panel"><div class="hd"><h2 style="font-size:18px">Metas</h2><a class="note" href="#/metas">ver todas</a></div>${ev.map((e) => `<div class="gline"><div><span>${icon(e.g.id, 16)} ${esc(e.g.name)} · ${esc(e.label)} → ${nf.format(e.goal.target)}</span><b>${e.remaining > 0 ? 'faltam ' + nf.format(e.remaining) : '✓'}</b></div><div class="bar"><div style="width:${e.pct}%;background:${e.g.color}"></div></div></div>`).join('')}</section>`;
+  return `<section class="panel"><div class="hd"><h2 style="font-size:18px">Metas</h2><a class="note" href="#/metas">ver todas</a></div>${ev.map((e) => `<div class="gline"><span>${icon(e.g.id, 16)} <span>${esc(e.g.name)} · ${esc(e.label)}<small>${nf.format(e.now)} → ${nf.format(e.goal.target)}</small></span></span><b style="color:${e.remaining > 0 ? 'var(--text)' : '#6EA8F5'}">${e.remaining > 0 ? 'faltam ' + nf.format(e.remaining) : '✓'}</b></div>`).join('')}</section>`;
 }
 function homeHighlight() {
   const rows = homeRows().filter((r) => r.dl && r.pts.length > 1);

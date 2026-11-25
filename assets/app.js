@@ -297,7 +297,7 @@ function goalCard(e) {
     <div class="ch"><div class="gname"><span class="sw" style="background:${color}"></span><div><b>${esc(e.g.name)}</b><small>${esc(e.label)}</small></div></div><span class="pill ${cls}">${st}</span></div>
     <div class="goal">${goalTxt}</div>
     <div class="gnum"><span class="num big" style="font-size:56px">${nf.format(e.now)}</span><span class="arrow">→</span><span class="num" style="font-size:36px;line-height:.9;color:var(--muted)">${nf.format(e.goal.target)}</span></div>
-    <div style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span>${e.remaining > 0 ? `Faltam <b style="color:var(--text)">${nf.format(e.remaining)}</b> pontos` : 'Meta atingida'}</span><b style="color:var(--text)">${nf.format(e.now)} / ${nf.format(e.goal.target)}</b></div><div class="bar" role="progressbar" aria-valuenow="${e.pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso da meta"><div style="width:${e.pct}%;background:${color}"></div></div></div>
+    <div class="remain"><span class="num" style="color:${e.remaining > 0 ? 'var(--text)' : 'var(--blue,#6EA8F5)'}">${e.remaining > 0 ? nf.format(e.remaining) : '✓'}</span><span>${e.remaining > 0 ? 'pontos para a meta' : 'meta atingida'}</span></div>
     <div class="cf"><span>Prazo <b>${dlTxt}</b></span><span>Ritmo <b class="${paceCls}">${paceTxt}</b></span><span>${fc}</span></div></article>`;
 }
 
