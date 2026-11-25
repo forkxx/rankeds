@@ -13,12 +13,23 @@ const dCol = (d) => (d > 0 ? '#4ADE80' : d < 0 ? '#F87171' : '#9AA4B2');
 const dTxt = (r, suffix = ' em 30 dias') => (r.dl ? sgn(r.d30) + suffix : 'coletando histórico');
 const todayStr = () => new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 const handleOf = () => (state.display?.handle || 'forkxx');
-const SITE = 'forkxx.github.io/rankeds';
 
+// Modo de cada jogo no cartão: o que mais ganhou rating em 30 dias. AoE2 e AoM partem do 1v1 e só trocam para Team se ele ganhou mais.
+const CARD_CAND = { aoe2: ['rm_1v1', 'rm_team'], aom: ['1v1', 'team'] };
+function cardMode(g, d) {
+  const cur = d.current;
+  let cands = CARD_CAND[g.id] ? CARD_CAND[g.id].map((id) => cur.modes.find((m) => m.id === id)).filter(Boolean) : featuredModes(cur);
+  const fresh = cands.filter((m) => !m.stale); if (fresh.length) cands = fresh;
+  if (!cands.length) return mainModeOf(cur);
+  const val = (m) => delta(toPts(d.history[m.id]), 30)?.value ?? 0;
+  let best = cands[0];
+  for (const m of cands.slice(1)) if (val(m) > val(best)) best = m;
+  return best;
+}
 function cardRows() {
   return GAMES.map((g) => {
     const d = state.data[g.id]; if (!d?.current) return null;
-    const m = mainModeOf(d.current); if (!m) return null;
+    const m = cardMode(g, d); if (!m) return null;
     const pts = toPts(d.history[m.id]), dl = delta(pts, 30);
     return { g, m, pts, dl, d30: dl?.value ?? 0, peak: peakOf(m, pts), href: state.display?.icons?.[g.id], title: g.name, sub: m.label };
   }).filter(Boolean);
@@ -38,7 +49,7 @@ function lsHeader(extra = '') {
   const av = state.display?.avatar, x = av ? 200 : 50;
   return `${av ? `<image href="${esc(av)}" x="44" y="22" width="140" height="140" preserveAspectRatio="xMidYMid meet"/>` : ''}${TX(x, 96, handleOf().toUpperCase(), { size: 72, w: 700, fill: '#FFFFFF', fam: 'b' })}${TX(x, 140, 'Evolução competitiva · ' + todayStr(), { size: 24 })}${extra}`;
 }
-const footerUrl = () => TX(1150, 606, SITE, { size: 18, fill: '#5C6675', a: 'end' });
+const footerUrl = () => '';
 
 // Colunas do formato paisagem (1200×630).
 function lsCols(rows, o = {}) {
@@ -47,7 +58,9 @@ function lsCols(rows, o = {}) {
     const x = 50 + i * (colW + gap), inner = colW - 48, big = fitNum(nf.format(r.m.rating), inner, 98), c = r.g.color;
     let s = '';
     if (o.glow) s += `<circle cx="${x + colW / 2}" cy="${y0 + h * 0.52}" r="${colW * 0.7}" fill="url(#glow${i})"/>`;
-    s += `<rect x="${x}" y="${y0}" width="${colW}" height="${h}" rx="22" fill="#161B22" fill-opacity="${o.glow ? 0.8 : 1}" stroke="#2A323D"/>`;
+    const hl = o.best === r && r.d30 > 0;
+    s += `<rect x="${x}" y="${y0}" width="${colW}" height="${h}" rx="22" fill="#161B22" fill-opacity="${o.glow ? 0.8 : 1}" stroke="${hl ? c : '#2A323D'}" stroke-width="${hl ? 4 : 1}"/>`;
+    if (hl) s += `<rect x="${x + colW / 2 - 78}" y="${y0 - 16}" width="156" height="32" rx="16" fill="${c}"/>${TX(x + colW / 2, y0 + 6, 'MAIS GANHOU', { size: 17, w: 700, fill: '#0E1116', a: 'middle' })}`;
     s += gIco(r, x + 22, y0 + 20, 44) + TX(x + 76, y0 + 50, r.title, { size: colW < 230 ? 16 : 19, w: 600, fill: '#E6EAF0' });
     s += TX(x + 24, y0 + 106, r.sub, { size: 20 });
     s += TX(x + 24, y0 + 106 + 96, nf.format(r.m.rating), { size: big, w: 700, fill: '#FFFFFF', fam: 'b' });
@@ -84,7 +97,7 @@ const SLIDES = [
         [w.st ? `${w.st} ${w.res === 'win' ? (w.st > 1 ? 'vitórias' : 'vitória') : w.res === 'loss' ? (w.st > 1 ? 'derrotas' : 'derrota') : 'empates'}` : '—', 'sequência atual'],
       ];
       const strip = `<rect x="50" y="502" width="1100" height="96" rx="22" fill="#161B22" stroke="#2A323D"/>` + items.map(([v, l], i) => TX(50 + 183 + i * 367, 556, v, { size: 52, w: 700, fill: '#FFFFFF', fam: 'b', a: 'middle' }) + TX(50 + 183 + i * 367, 584, l, { size: 18, a: 'middle' })).join('');
-      return wrap(1200, 630, lsHeader() + lsCols(rows, { h: 290 }) + strip + TX(1150, 622, SITE, { size: 14, fill: '#5C6675', a: 'end' }));
+      return wrap(1200, 630, lsHeader() + lsCols(rows, { h: 290 }) + strip);
     } },
   { id: 'destaque', name: 'Um jogo em destaque', w: 1200, h: 630, scale: 2, hint: 'Paisagem 1200×630 · o melhor do mês em tamanho grande',
     build: (rows) => {
@@ -114,7 +127,8 @@ const SLIDES = [
       });
       if (!rows.length) return '';
       const tag = TX(1150, 140, 'WARCRAFT III', { size: 28, w: 700, fill: g.color, a: 'end' });
-      return wrap(1200, 630, lsHeader(tag) + lsCols(rows) + footerUrl());
+      const best = rows.reduce((a, b) => (b.d30 > a.d30 ? b : a));
+      return wrap(1200, 630, lsHeader(tag) + lsCols(rows, { best }) + footerUrl());
     } },
   { id: 'stories', name: 'Stories 9:16', w: 1080, h: 1920, scale: 1, hint: 'Vertical 1080×1920 · Stories do Instagram e status do WhatsApp',
     build: (rows) => {
@@ -122,7 +136,7 @@ const SLIDES = [
       const head = (av ? `<image href="${esc(av)}" x="390" y="90" width="300" height="300" preserveAspectRatio="xMidYMid meet"/>` : '') + TX(540, 520, handleOf().toUpperCase(), { size: 150, w: 700, fill: '#FFFFFF', fam: 'b', a: 'middle' }) + TX(540, 580, 'Evolução competitiva · ' + todayStr(), { size: 34, a: 'middle' });
       const cards = rows.map((r, i) => { const y = 650 + i * 292, dc = dCol(r.d30), rt = nf.format(r.m.rating);
         return `<rect x="60" y="${y}" width="960" height="270" rx="34" fill="#161B22" stroke="#2A323D"/><rect x="60" y="${y}" width="16" height="270" rx="8" fill="${r.g.color}"/>${gIco(r, 112, y + 38, 96)}${TX(228, y + 86, r.title, { size: 42, w: 600, fill: '#E6EAF0' })}${TX(228, y + 130, r.sub, { size: 30 })}${TX(112, y + 232, dTxt(r), { size: 34, w: 600, fill: dc })}${TX(980, y + 188, rt, { size: fitNum(rt, 440, 190), w: 700, fill: '#FFFFFF', fam: 'b', a: 'end' })}${TX(980, y + 238, 'Pico ' + nf.format(r.peak), { size: 28, a: 'end' })}`; }).join('');
-      return wrap(1080, 1920, head + cards + TX(540, 1876, SITE, { size: 30, fill: '#5C6675', a: 'middle' }));
+      return wrap(1080, 1920, head + cards);
     } },
   { id: 'quadrado', name: 'Quadrado 1:1', w: 1080, h: 1080, scale: 1, hint: 'Quadrado 1080×1080 · feed do Instagram e foto de comunidade',
     build: (rows) => {
@@ -130,7 +144,7 @@ const SLIDES = [
       const head = (av ? `<image href="${esc(av)}" x="56" y="36" width="170" height="170" preserveAspectRatio="xMidYMid meet"/>` : '') + TX(av ? 248 : 60, 130, handleOf().toUpperCase(), { size: 110, w: 700, fill: '#FFFFFF', fam: 'b' }) + TX(av ? 250 : 62, 182, 'Evolução competitiva · ' + todayStr(), { size: 28 });
       const cards = rows.slice(0, 4).map((r, i) => { const x = 60 + (i % 2) * 480, y = 240 + Math.floor(i / 2) * 360, rt = nf.format(r.m.rating);
         return `<rect x="${x}" y="${y}" width="460" height="340" rx="30" fill="#161B22" stroke="#2A323D"/>${gIco(r, x + 28, y + 26, 64)}${TX(x + 110, y + 70, r.title, { size: 28, w: 600, fill: '#E6EAF0' })}${TX(x + 28, y + 128, r.sub, { size: 26 })}${TX(x + 28, y + 244, rt, { size: fitNum(rt, 404, 124), w: 700, fill: '#FFFFFF', fam: 'b' })}${TX(x + 28, y + 292, dTxt(r), { size: 26, w: 600, fill: dCol(r.d30) })}<rect x="${x}" y="${y + 326}" width="460" height="14" rx="7" fill="${r.g.color}"/>`; }).join('');
-      return wrap(1080, 1080, head + cards + TX(1020, 1050, SITE, { size: 26, fill: '#5C6675', a: 'end' }));
+      return wrap(1080, 1080, head + cards);
     } },
   { id: 'carta', name: 'Carta colecionável', w: 900, h: 1260, scale: 1.2, hint: 'Carta 900×1260 · visual dourado de jogador',
     build: (rows) => {
@@ -141,7 +155,6 @@ const SLIDES = [
       s += TX(450, 600, handleOf().toUpperCase(), { size: 150, w: 700, fill: gold, fam: 'b', a: 'middle' }) + TX(450, 652, 'Evolução competitiva · ' + todayStr(), { size: 26, fill: dim, a: 'middle' });
       rows.slice(0, 4).forEach((r, i) => { const x = 110 + (i % 2) * 350, y = 700 + Math.floor(i / 2) * 220, rt = nf.format(r.m.rating);
         s += `<rect x="${x}" y="${y}" width="320" height="196" rx="24" fill="#2A230F" stroke="${dim}" stroke-opacity=".5"/>${gIco(r, x + 20, y + 18, 52)}${TX(x + 82, y + 52, r.title, { size: 22, w: 700, fill: dim })}${TX(x + 20, y + 140, rt, { size: fitNum(rt, 280, 100), w: 700, fill: '#FFFFFF', fam: 'b' })}${TX(x + 20, y + 176, r.sub + ' · ' + (r.dl ? sgn(r.d30) : '—'), { size: 20, fill: dCol(r.d30) })}`; });
-      s += TX(450, 1182, SITE, { size: 24, fill: dim, a: 'middle' });
       return wrap(900, 1260, s, defs);
     } },
 ];
@@ -162,7 +175,7 @@ function cardPage() {
     <section class="cs"><button class="csnav" data-cs="-1" aria-label="Formato anterior">‹</button>${view}<button class="csnav" data-cs="1" aria-label="Próximo formato">›</button></section>
     <div class="csinfo"><b>${i + 1} / ${SLIDES.length} · ${esc(sl.name)}</b><span>${esc(sl.hint)}</span></div>
     <div class="btns csdots" role="group" aria-label="Formatos do cartão">${chips}</div>
-    <span class="note">Os cartões usam o modo principal de cada jogo (o mais jogado recentemente entre os modos de destaque). Use as setas do teclado ou os botões para trocar de formato. Mude os destaques em config/display.json.</span>`;
+    <span class="note">Cada jogo aparece com o modo que mais ganhou rating em 30 dias. No AoE2 e no AoM o padrão é o 1v1, e o Team só entra se ganhou mais. Use as setas do teclado ou os botões para trocar de formato. Mude os destaques em config/display.json.</span>`;
 }
 
 async function downloadCard() {
