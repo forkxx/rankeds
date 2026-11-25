@@ -493,7 +493,7 @@ $app.addEventListener('pointerout', chartTipOff);
 // ---- Página inicial: placar, destaque do mês, atividade recente, metas ----
 function homeRows() {
   const out = [];
-  for (const g of GAMES) {
+  for (const g of shownGames()) {
     const d = state.data[g.id]; if (!d?.current) continue;
     for (const m of featuredModes(d.current)) {
       const pts = toPts(d.history[m.id]);
@@ -510,34 +510,148 @@ function bigSpark(pts, color, w = 360, h = 110) {
   const line = smoothPath(xy), gid = 'hs' + color.replace('#', '');
   return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;max-width:${w}px;height:auto" aria-hidden="true"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".4"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><path d="${line} L${w},${h} L0,${h} Z" fill="url(#${gid})"/><path d="${line}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
+// ---- Preferências da página inicial (guardadas no navegador) ----
+const HPERIODS = [7, 30, 90];
+const HSORTS = [['default', 'Padrão'], ['rating', 'Rating'], ['delta', 'Variação'], ['activity', 'Atividade']];
+(function loadPrefs() {
+  try {
+    const p = JSON.parse(localStorage.getItem('rk_home') || '{}');
+    if (Array.isArray(p.hide)) state.hhide = p.hide.filter((id) => GAMES.some((g) => g.id === id));
+    if (HPERIODS.includes(p.period)) state.hperiod = p.period;
+    if (HSORTS.some((x) => x[0] === p.sort)) state.hsort = p.sort;
+    if (state.hhide.length >= GAMES.length) state.hhide = [];
+  } catch (e) { /* sem armazenamento: usa o padrão */ }
+})();
+function savePrefs() {
+  try { localStorage.setItem('rk_home', JSON.stringify({ hide: state.hhide, period: state.hperiod, sort: state.hsort })); } catch (e) { /* ignora */ }
+}
+const shownGames = () => GAMES.filter((g) => !state.hhide.includes(g.id));
+function homeClick(e) {
+  const f = e.target.closest('button[data-hf]'), p = e.target.closest('button[data-hp]'), s = e.target.closest('button[data-hs]'), x = e.target.closest('button[data-hexp]');
+  if (!f && !p && !s && !x) return false;
+  if (f) {
+    const id = f.dataset.hf;
+    if (id === 'all') state.hhide = [];
+    else if (state.hhide.includes(id)) state.hhide = state.hhide.filter((k) => k !== id);
+    else if (state.hhide.length < GAMES.length - 1) state.hhide = [...state.hhide, id];
+  }
+  if (p) state.hperiod = Number(p.dataset.hp);
+  if (s) state.hsort = s.dataset.hs;
+  if (x) state.hopen = state.hopen.includes(x.dataset.hexp) ? state.hopen.filter((k) => k !== x.dataset.hexp) : [...state.hopen, x.dataset.hexp];
+  savePrefs();
+  render();
+  return true;
+}
+function homeControls() {
+  const on = (v) => (v ? 'style="background:#232A33;border-color:#3A4452"' : 'style="opacity:.55"');
+  const chips = `<button class="btn" data-hf="all" aria-pressed="${!state.hhide.length}" ${on(!state.hhide.length)}>Todos</button>`
+    + GAMES.map((g) => { const v = !state.hhide.includes(g.id); return `<button class="btn" data-hf="${g.id}" aria-pressed="${v}" ${on(v)}>${icon(g.id, 18)} ${esc(g.name)}</button>`; }).join('');
+  const per = HPERIODS.map((d) => `<button class="btn" data-hp="${d}" aria-pressed="${state.hperiod === d}" ${state.hperiod === d ? 'style="background:#232A33;border-color:#3A4452"' : ''}>${d} dias</button>`).join('');
+  const srt = HSORTS.map(([id, l]) => `<button class="btn" data-hs="${id}" aria-pressed="${state.hsort === id}" ${state.hsort === id ? 'style="background:#232A33;border-color:#3A4452"' : ''}>${l}</button>`).join('');
+  return `<section class="hctl"><div class="btns" role="group" aria-label="Filtrar jogos">${chips}</div><div class="hctl-r"><div class="btns" role="group" aria-label="Período">${per}</div><div class="btns" role="group" aria-label="Ordenar">${srt}</div></div></section>`;
+}
+function trendPill(dl, rating) {
+  if (!dl) return '';
+  const r = Math.abs(dl.value) / (rating || 1);
+  const [t, c] = r < 0.01 ? ['Estável', 'flat'] : dl.value > 0 ? ['Em alta', 'up'] : ['Em queda', 'down'];
+  return `<span class="tpill ${c}">${t}</span>`;
+}
+function formDots(gid, mid) {
+  const ml = matchesOf(gid).filter((x) => x.mode === mid).sort((a, b) => a.t.localeCompare(b.t)).slice(-5);
+  if (!ml.length) return '<span class="note">—</span>';
+  const L = { win: ['V', 'Vitória'], loss: ['D', 'Derrota'], draw: ['E', 'Empate'] };
+  return `<span class="forma" aria-label="Últimas ${ml.length} partidas">${ml.map((x) => `<i class="fd ${x.result}" title="${L[x.result]?.[1] ?? ''} · ${esc(dateFmt(Date.parse(x.t)))}">${L[x.result]?.[0] ?? '?'}</i>`).join('')}</span>`;
+}
+function scoreItem(g, d, m) {
+  const days = state.hperiod, pts = toPts(d.history[m.id]), dl = delta(pts, days);
+  const tmax = pts.length ? pts[pts.length - 1].t : 0;
+  return { g, d, m, pts, dl, win: pts.filter((p) => p.t >= tmax - days * DAY), last: m.lastGameAt || '' };
+}
+function scoreRow(it, extra) {
+  const { g, m, pts, dl, win } = it, days = state.hperiod, dv = deltaView(dl, days);
+  const n = (m.wins ?? 0) + (m.losses ?? 0) + (m.draws ?? 0), wr = n ? Math.round(((m.wins ?? 0) / n) * 100) + '%' : '—';
+  const pk = peakOf(m, pts), dist = pk - m.rating;
+  let spk = '<span class="note">coletando…</span>', rng = '';
+  if (win.length > 1) {
+    const vs = win.map((x) => x.v), mn = Math.min(...vs, m.rating), mx = Math.max(...vs, m.rating);
+    spk = `<svg viewBox="0 0 130 36" width="130" height="36" aria-hidden="true"><polyline points="${win.map((x, k) => `${((k * 130) / (win.length - 1)).toFixed(1)},${(32 - ((x.v - mn) / (mx - mn || 1)) * 28).toFixed(1)}`).join(' ')}" fill="none" stroke="${g.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    rng = `<div class="rng" title="Mínimo ${nf.format(mn)} · máximo ${nf.format(mx)} em ${days} dias"><span class="rb"><i style="left:${(((m.rating - mn) / (mx - mn || 1)) * 100).toFixed(0)}%;background:${g.color}"></i></span><small>${nf.format(mn)}</small><small>${nf.format(mx)}</small></div>`;
+  }
+  return `<a class="srow2 gc${extra ? ' extra' : ''}" href="#/${g.id}/${m.id}" style="--gc:${g.color}"><div class="sg">${icon(g.id, extra ? 22 : 30)}<div><b>${esc(m.label)}</b><small>${esc(g.name)}${m.stale ? ' · temporada anterior' : ''}</small></div></div>
+    <div class="num sr" data-count="${m.rating}">${nf.format(m.rating)}</div>
+    <div><div class="dl ${dv.cls}">${dv.txt} <span>${dv.sub}</span></div>${trendPill(dl, m.rating)}${rng}</div>
+    <div class="sk2">${spk}</div>
+    <div class="fm">${formDots(g.id, m.id)}</div>
+    <div class="sm">Winrate<b>${wr}</b></div>
+    <div class="sm">Do pico<b>${dist > 0 ? '−' + nf.format(dist) : 'no pico'}</b></div></a>`;
+}
 function homeScore() {
-  const rows = GAMES.flatMap((g) => {
-    const d = state.data[g.id], cur = d?.current;
-    if (!cur) return [`<div class="srow2 off"><div class="sg">${icon(g.id, 30)}<div><b>${esc(g.name)}</b><small>Sem dados ainda</small></div></div></div>`];
-    const modes = featuredModes(cur);
-    return modes.map((m, idx) => {
-      const pts = toPts(d.history[m.id]), dv = deltaView(delta(pts, 30), 30);
-      const n = (m.wins ?? 0) + (m.losses ?? 0) + (m.draws ?? 0), wr = n ? Math.round(((m.wins ?? 0) / n) * 100) + '%' : '—';
-      const pk = peakOf(m, pts), dist = pk - m.rating;
-      const sp = pts.slice(-30);
-      let spk = '<span class="note">coletando…</span>';
-      if (sp.length > 1) {
-        const vs = sp.map((x) => x.v), mn = Math.min(...vs), mx = Math.max(...vs);
-        spk = `<svg viewBox="0 0 150 36" width="150" height="36" aria-hidden="true"><polyline points="${sp.map((x, k) => `${((k * 150) / (sp.length - 1)).toFixed(1)},${(32 - ((x.v - mn) / (mx - mn || 1)) * 28).toFixed(1)}`).join(' ')}" fill="none" stroke="${g.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const sort = state.hsort;
+  let out = [];
+  if (sort === 'default') {
+    for (const g of shownGames()) {
+      const d = state.data[g.id], cur = d?.current;
+      if (!cur) { out.push(`<div class="srow2 off"><div class="sg">${icon(g.id, 30)}<div><b>${esc(g.name)}</b><small>Sem dados ainda</small></div></div></div>`); continue; }
+      const feat = featuredModes(cur), rest = cur.modes.filter((m) => !feat.includes(m));
+      out.push(...feat.map((m) => scoreRow(scoreItem(g, d, m), false)));
+      if (rest.length) {
+        const open = state.hopen.includes(g.id);
+        out.push(`<button class="gtoggle" data-hexp="${g.id}" aria-expanded="${open}">${open ? '▾' : '▸'} ${open ? 'Ocultar' : 'Todos os modos de'} ${esc(g.name)} <small>(${rest.length} a mais)</small></button>`);
+        if (open) out.push(...rest.map((m) => scoreRow(scoreItem(g, d, m), true)));
       }
-      const first = idx === 0;
-      return `<a class="srow2 gc${first ? ' gfirst' : ''}" href="#/${g.id}/${m.id}" style="--gc:${g.color}"><div class="sg">${icon(g.id, 30)}<div><b>${esc(m.label)}</b><small>${esc(g.name)}${m.stale ? ' · temporada anterior' : ''}</small></div></div>
-        <div class="num sr" data-count="${m.rating}">${nf.format(m.rating)}</div>
-        <div class="dl ${dv.cls}">${dv.txt} <span>${dv.sub}</span></div>
-        <div class="sk2">${spk}</div>
-        <div class="sm">Winrate<b>${wr}</b></div>
-        <div class="sm">Do pico<b>${dist > 0 ? '−' + nf.format(dist) : 'no pico'}</b></div></a>`;
-    });
-  }).join('');
-  return `<div class="panel scorep"><div class="shead"><span>Jogo · modo</span><span>Rating</span><span>30 dias</span><span>Tendência</span><span></span><span></span></div>${rows}</div>`;
+    }
+  } else {
+    const items = [];
+    for (const g of shownGames()) { const d = state.data[g.id]; if (d?.current) for (const m of featuredModes(d.current)) items.push(scoreItem(g, d, m)); }
+    const key = { rating: (x) => x.m.rating, delta: (x) => x.dl?.value ?? -Infinity, activity: (x) => Date.parse(x.last) || 0 }[sort];
+    items.sort((a, b) => key(b) - key(a));
+    out = items.map((x) => scoreRow(x, false));
+  }
+  return `<div class="panel scorep"><div class="shead"><span>Jogo · modo</span><span>Rating</span><span>${state.hperiod} dias</span><span>Tendência</span><span>Forma</span><span></span><span></span></div>${out.join('')}</div>`;
+}
+function homeToday() {
+  const k = dayKey(new Date().toISOString());
+  const all = shownGames().flatMap((g) => matchesOf(g.id).map((m) => ({ ...m, g })));
+  const td = all.filter((m) => dayKey(m.t) === k);
+  const wins = td.filter((m) => m.result === 'win').length, wd = td.filter((m) => m.delta != null);
+  const saldo = wd.length ? wd.reduce((a, m) => a + m.delta, 0) : null;
+  const lastM = [...all].sort((a, b) => b.t.localeCompare(a.t))[0];
+  const R = { win: 'vitória', loss: 'derrota', draw: 'empate' };
+  const lbl = lastM ? (state.data[lastM.g.id]?.current?.modes?.find((x) => x.id === lastM.mode)?.label ?? lastM.mode) : '';
+  return `<section class="today"><div class="hd2"><h2>Hoje</h2><span class="note">zera à meia-noite</span></div><div class="tiles">
+    <div class="tile"><span class="l">Partidas</span><span class="num">${td.length}</span></div>
+    <div class="tile"><span class="l">Saldo</span><span class="num ${saldo == null ? '' : cls(saldo)}">${saldo == null ? '—' : (saldo > 0 ? '+' : saldo < 0 ? '−' : '') + nf.format(Math.abs(saldo))}</span></div>
+    <div class="tile"><span class="l">Winrate</span><span class="num">${td.length ? Math.round((wins / td.length) * 100) + '%' : '—'}</span></div></div>
+    <span class="note">${lastM ? `Última partida: ${esc(lastM.g.name)} · ${esc(lbl)} · ${R[lastM.result] ?? ''} · ${ago(lastM.t)}` : 'Nenhuma partida registrada ainda.'}</span></section>`;
+}
+function homeNextGoal() {
+  const ev = (state.goals || []).map(evalGoal).filter((e) => e.status !== 'nodata' && e.status !== 'done' && !state.hhide.includes(e.g.id));
+  if (!ev.length) return '';
+  const e = ev.reduce((a, b) => (b.remaining < a.remaining ? b : a));
+  return `<a class="ng gc" href="#/metas" style="--gc:${e.g.color}"><span class="pk">PRÓXIMA META</span><div class="ng-t">${icon(e.g.id, 22)}<b>${esc(e.g.name)} · ${esc(e.label)}</b></div><div class="ng-n"><span class="num">${nf.format(e.remaining)}</span><span>pontos para ${nf.format(e.goal.target)}</span></div><small>${nf.format(e.now)} → ${nf.format(e.goal.target)}</small></a>`;
+}
+function homeWeekGame() {
+  const now = Date.now(), w = 7 * DAY;
+  let best = null;
+  for (const g of shownGames()) {
+    const d = state.data[g.id]; if (!d?.current) continue;
+    let pc = 0, have = false;
+    for (const m of featuredModes(d.current)) {
+      const pts = toPts(d.history[m.id]), a = valueAt(pts, now), b = valueAt(pts, now - w);
+      if (a != null && b != null) { pc += a - b; have = true; }
+    }
+    if (have && (!best || pc > best.pc)) best = { g, pc };
+  }
+  if (!best || best.pc <= 0) return '';
+  const ms = matchesOf(best.g.id).filter((m) => Date.parse(m.t) > now - w);
+  const wr = ms.length ? Math.round((ms.filter((m) => m.result === 'win').length / ms.length) * 100) + '% de winrate · ' + ms.length + ' partidas' : 'sem partidas registradas na semana';
+  return `<a class="wg gc" href="#/${best.g.id}" style="--gc:${best.g.color}"><span class="pk">JOGO DA SEMANA</span><div class="ng-t">${icon(best.g.id, 30)}<b>${esc(best.g.name)}</b></div><div class="ng-n"><span class="num">+${nf.format(best.pc)}</span><span>pontos em 7 dias</span></div><small>${wr}</small></a>`;
+}
+function homeRefresh() {
+  return `<section class="refresh"><a class="cta" href="https://github.com/forkxx/rankeds/actions/workflows/collect.yml" target="_blank" rel="noopener">↻ Atualizar agora</a><span class="note">Abre o GitHub Actions: clique em “Run workflow” para coletar na hora (é preciso estar logado no GitHub). O site atualiza 1 a 2 minutos depois. Sem isso, a coleta roda sozinha a cada 6 horas.</span></section>`;
 }
 function homeGoals() {
-  const ev = (state.goals || []).map(evalGoal).filter((e) => e.status !== 'nodata');
+  const ev = (state.goals || []).map(evalGoal).filter((e) => e.status !== 'nodata' && !state.hhide.includes(e.g.id));
   if (!ev.length) return '';
   return `<section class="panel"><div class="hd"><h2 style="font-size:18px">Metas</h2><a class="note" href="#/metas">ver todas</a></div>${ev.map((e) => `<div class="gline"><span>${icon(e.g.id, 16)} <span>${esc(e.g.name)} · ${esc(e.label)}<small>${nf.format(e.now)} → ${nf.format(e.goal.target)}</small></span></span><b style="color:${e.remaining > 0 ? 'var(--text)' : '#6EA8F5'}">${e.remaining > 0 ? 'faltam ' + nf.format(e.remaining) : '✓'}</b></div>`).join('')}</section>`;
 }
@@ -549,7 +663,7 @@ function homeHighlight() {
   return `<a class="hl gc" href="#/${b.g.id}" style="--gc:${b.g.color}"><div class="hl-l"><span class="pk">${b.dl.value > 0 ? 'DESTAQUE DO MÊS' : 'MODO MAIS ESTÁVEL DO MÊS'}</span><div class="hl-t">${icon(b.g.id, 36)}<b>${esc(b.g.name)} · ${esc(b.m.label)}</b></div><div class="hl-n"><span class="num" data-count="${b.m.rating}">${nf.format(b.m.rating)}</span><span class="dl ${dv.cls}">${dv.txt} <span>${dv.sub}</span></span></div></div><div class="hl-r">${bigSpark(b.pts, b.g.color)}</div></a>`;
 }
 function homeFeed() {
-  const all = GAMES.flatMap((g) => matchesOf(g.id).map((m) => ({ ...m, g }))).sort((a, b) => b.t.localeCompare(a.t)).slice(0, 8);
+  const all = shownGames().flatMap((g) => matchesOf(g.id).map((m) => ({ ...m, g }))).sort((a, b) => b.t.localeCompare(a.t)).slice(0, 8);
   const NAME = { win: ['Vitória', 'up'], loss: ['Derrota', 'down'], draw: ['Empate', 'flat'] };
   const body = all.length ? all.map((m) => { const [n, c] = NAME[m.result] || ['—', 'flat']; return `<a class="fitem" href="#/${m.g.id}">${icon(m.g.id, 26)}<div class="fi"><b>${esc(m.g.name)} · ${n}</b><small>${esc(m.opp || m.map || m.mode)} · ${ago(m.t)}</small></div><b class="${m.delta ? cls(m.delta) : 'flat'}">${m.delta ? (m.delta > 0 ? '+' : '−') + Math.abs(m.delta) : '—'}</b></a>`; }).join('') : '<div class="empty">Nenhuma partida registrada ainda.</div>';
   return `<section class="panel"><div class="hd"><h2 style="font-size:18px">Atividade recente</h2><a class="note" href="#/analises">ver análises</a></div><div class="feed">${body}</div></section>`;

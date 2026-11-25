@@ -7,7 +7,7 @@ const GAMES = [
 ];
 const DAY = 86400000;
 const $app = document.getElementById('app');
-const state = { meta: null, data: {}, range: 30, mode: null, hrange: 90, goals: [], display: null, afilter: 'all', tlAll: false, irange: 90 };
+const state = { meta: null, data: {}, range: 30, mode: null, hrange: 90, goals: [], display: null, afilter: 'all', tlAll: false, irange: 90, hhide: [], hperiod: 30, hsort: 'default', hopen: [] };
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nf = new Intl.NumberFormat('pt-BR');
@@ -146,10 +146,12 @@ function home() {
   $app.innerHTML = `
     <section><h1>Minha evolução competitiva</h1><p class="lead">Todos os jogos ranqueados num só lugar, com histórico coletado automaticamente.</p></section>
     ${peakBanner()}
-    <section class="hscore">${homeScore()}<aside class="hside">${weekly()}${homeGoals()}</aside></section>
-    ${homeHighlight()}
+    ${homeControls()}
+    <section class="hscore">${homeScore()}<aside class="hside">${homeNextGoal()}${homeToday()}${weekly()}${homeGoals()}</aside></section>
+    <section class="hlrow">${homeHighlight()}${homeWeekGame()}</section>
     <section class="hrow">${homeFeed()}<div class="hrow-r">${combined()}</div></section>
-    <p class="note">A página inicial mostra só os modos principais de cada jogo; todos os modos ficam na página de cada jogo. Os destaques são editáveis em config/display.json.</p>`;
+    <p class="note">A página inicial mostra só os modos principais de cada jogo; os demais abrem em “Todos os modos”. Os destaques são editáveis em config/display.json.</p>
+    ${homeRefresh()}`;
 }
 
 // Curva suave (interpolação monotônica) para o gráfico de rating.
@@ -187,7 +189,8 @@ function chart(pts, color, proj) {
   const area = pts.length > 1 ? `<path d="${line} L${X(t1 === t0 ? t0 : pts[pts.length - 1].t).toFixed(1)},${B} L${X(t0).toFixed(1)},${B} Z" fill="url(#${gid})"/><path d="${line}" fill="none" stroke="${color}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>` : '';
   const pk = pts.reduce((a, b) => (b.v > a.v ? b : a)), last = pts[pts.length - 1];
   const projSvg = (proj?.pts?.length === 2 ? `<polyline points="${proj.pts.map((p) => `${X(p.t).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ')}" fill="none" stroke="${color}" stroke-width="3" stroke-dasharray="7 6" stroke-linecap="round"/><circle cx="${X(proj.pts[1].t).toFixed(1)}" cy="${Y(proj.pts[1].v).toFixed(1)}" r="4" fill="#0E1116" stroke="${color}" stroke-width="2"/>` : '')
-    + (proj?.target != null ? `<line x1="${L}" y1="${Y(proj.target).toFixed(1)}" x2="${R}" y2="${Y(proj.target).toFixed(1)}" stroke="#E6EAF0" stroke-opacity=".5" stroke-dasharray="2 5"/><text x="${R}" y="${(Y(proj.target) - 6).toFixed(1)}" text-anchor="end" font-size="12" font-weight="600" fill="#E6EAF0">Meta ${proj.target}</text>` : '');
+    + (proj?.target != null ? `<line x1="${L}" y1="${Y(proj.target).toFixed(1)}" x2="${R}" y2="${Y(proj.target).toFixed(1)}" stroke="#E6EAF0" stroke-opacity=".5" stroke-dasharray="2 5"/><text x="${R}" y="${(Y(proj.target) - 6).toFixed(1)}" text-anchor="end" font-size="12" font-weight="600" fill="#E6EAF0">Meta ${nf.format(proj.target)}</text>` : '')
+    + (proj?.target != null && last.v < proj.target ? `<line x1="${X(last.t).toFixed(1)}" y1="${Y(last.v).toFixed(1)}" x2="${X(last.t).toFixed(1)}" y2="${Y(proj.target).toFixed(1)}" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round"/><text x="${(X(last.t) - 8).toFixed(1)}" y="${((Y(last.v) + Y(proj.target)) / 2 + 4).toFixed(1)}" text-anchor="end" font-size="12" font-weight="700" fill="#4ADE80">faltam ${nf.format(proj.target - last.v)}</text>` : '');
   const xl = [0, 1 / 3, 2 / 3, 1].map((f, i) => { const t = t0 + (t1 - t0) * f; return `<text x="${X(t)}" y="264" text-anchor="${i === 0 ? 'start' : i === 3 ? 'end' : 'middle'}" fill="#9AA4B2" font-size="12">${shortDate(t)}</text>`; }).join('');
   const peakX = X(pk.t);
   const meta = JSON.stringify({ p: pts.length > 400 ? pts.filter((_, i) => i % Math.ceil(pts.length / 400) === 0 || i === pts.length - 1).map((p) => [p.t, p.v]) : pts.map((p) => [p.t, p.v]), L, R, T, B, t0, t1, lo, hi });
@@ -338,6 +341,7 @@ function render() {
 }
 
 $app.addEventListener('click', (e) => {
+  if (homeClick(e)) return;
   const b = e.target.closest('button[data-mode],button[data-range],button[data-hrange]');
   if (!b) return;
   if (b.dataset.hrange) state.hrange = Number(b.dataset.hrange);
