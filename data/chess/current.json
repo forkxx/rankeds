@@ -1,7 +1,7 @@
 {
   "game": "chess",
   "ok": true,
-  "fetchedAt": "2026-11-25T07:57:12.266Z",
+  "fetchedAt": "2026-11-25T08:37:47.759Z",
   "player": {
     "name": "Maximilian Rox",
     "id": "163731237",
@@ -12,14 +12,14 @@
     {
       "id": "rapid",
       "label": "Rapid",
-      "rating": 690,
+      "rating": 701,
       "peak": 886,
       "rank": null,
       "tier": null,
-      "wins": 224,
+      "wins": 225,
       "losses": 227,
-      "draws": 26,
-      "lastGameAt": "2026-11-18T08:54:45.000Z"
+      "draws": 27,
+      "lastGameAt": "2026-11-25T08:32:44.000Z"
     },
     {
       "id": "blitz",
@@ -59,6 +59,22 @@
     }
   ],
   "recent": [
+    {
+      "playedAt": "2026-11-25T08:32:44.000Z",
+      "mode": "rapid",
+      "result": "draw",
+      "ratingAfter": 701,
+      "opponent": "Opandow (716)",
+      "detail": "https://www.chess.com/game/live/187970109974"
+    },
+    {
+      "playedAt": "2026-11-25T08:16:59.000Z",
+      "mode": "rapid",
+      "result": "win",
+      "ratingAfter": 701,
+      "opponent": "Karmonium (773)",
+      "detail": "https://www.chess.com/game/live/187969826048"
+    },
     {
       "playedAt": "2026-11-18T08:54:45.000Z",
       "mode": "rapid",
@@ -122,22 +138,6 @@
       "ratingAfter": 641,
       "opponent": "emanuel_vitr (719)",
       "detail": "https://www.chess.com/game/live/186065847430"
-    },
-    {
-      "playedAt": "2026-10-26T06:35:45.000Z",
-      "mode": "rapid",
-      "result": "win",
-      "ratingAfter": 648,
-      "opponent": "Whiteout66 (591)",
-      "detail": "https://www.chess.com/game/live/185960847662"
-    },
-    {
-      "playedAt": "2026-10-26T06:08:45.000Z",
-      "mode": "rapid",
-      "result": "loss",
-      "ratingAfter": 641,
-      "opponent": "Ariel_4_mtz (651)",
-      "detail": "https://www.chess.com/game/live/185960160850"
     }
   ]
 }
