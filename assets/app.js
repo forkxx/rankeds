@@ -215,7 +215,7 @@ function detail(id) {
   const recent = (cur.recent || []).filter((r) => !r.mode || r.mode === mode.id);
   const ranges = [[30, '30d'], [90, '90d'], [365, '1 ano'], [0, 'Tudo']];
   $app.innerHTML = `
-    <a class="back" href="#/">← Voltar ao dashboard</a>
+    <a class="back" href="#/">← Voltar ao principal</a>
     <section class="hero gc" style="--gc:${g.color}"><div>
       <div class="gname" style="margin-bottom:10px">${icon(g.id, 28)}<b>${esc(g.name)}</b><small>· ${esc(cur.player?.name)}</small></div>
       <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span class="num big" data-count="${mode.rating}">${nf.format(mode.rating)}</span><span class="dl ${dv.cls}" style="font-size:18px">${dv.txt} <span>${dv.sub}</span></span></div></div>
