@@ -259,7 +259,8 @@ function evalGoal(goal) {
     start = (before ?? pts[0])?.v ?? now;
   }
   const done = now >= goal.target;
-  const pct = done ? 100 : Math.max(0, Math.min(100, Math.round(((now - start) / (goal.target - start || 1)) * 100)));
+  const pct = done ? 100 : Math.max(0, Math.min(100, Math.round((now / goal.target) * 100)));
+  const remaining = Math.max(0, goal.target - now);
   const span = pts.length > 1 ? pts[pts.length - 1].t - pts[0].t : 0;
   const dl = delta(pts, 30);
   const pace = dl && span >= 7 * DAY ? dl.value * (30 / Math.min(30, Math.round(span / DAY))) : null; // pontos por 30 dias
@@ -271,7 +272,7 @@ function evalGoal(goal) {
   if (done) status = 'done';
   else if (deadline && daysLeft < 0) status = 'late';
   else if (deadline && pace != null) status = forecast != null && forecast <= deadline ? 'ontrack' : 'late';
-  return { ...base, now, start, pct, pace, deadline, daysLeft, forecast, status };
+  return { ...base, now, start, pct, remaining, pace, deadline, daysLeft, forecast, status };
 }
 
 const STATUS = {
@@ -296,7 +297,7 @@ function goalCard(e) {
     <div class="ch"><div class="gname"><span class="sw" style="background:${color}"></span><div><b>${esc(e.g.name)}</b><small>${esc(e.label)}</small></div></div><span class="pill ${cls}">${st}</span></div>
     <div class="goal">${goalTxt}</div>
     <div class="gnum"><span class="num big" style="font-size:56px">${nf.format(e.now)}</span><span class="arrow">→</span><span class="num" style="font-size:36px;line-height:.9;color:var(--muted)">${nf.format(e.goal.target)}</span></div>
-    <div style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span>Progresso desde a criação da meta (${nf.format(e.start)})</span><b style="color:var(--text)">${e.pct}%</b></div><div class="bar" role="progressbar" aria-valuenow="${e.pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso da meta"><div style="width:${e.pct}%;background:${color}"></div></div></div>
+    <div style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span>${e.remaining > 0 ? `Faltam <b style="color:var(--text)">${nf.format(e.remaining)}</b> pontos` : 'Meta atingida'}</span><b style="color:var(--text)">${nf.format(e.now)} / ${nf.format(e.goal.target)}</b></div><div class="bar" role="progressbar" aria-valuenow="${e.pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso da meta"><div style="width:${e.pct}%;background:${color}"></div></div></div>
     <div class="cf"><span>Prazo <b>${dlTxt}</b></span><span>Ritmo <b class="${paceCls}">${paceTxt}</b></span><span>${fc}</span></div></article>`;
 }
 
