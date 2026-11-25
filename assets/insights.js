@@ -624,12 +624,6 @@ function homeToday() {
     <div class="tile"><span class="l">Winrate</span><span class="num">${td.length ? Math.round((wins / td.length) * 100) + '%' : '—'}</span></div></div>
     <span class="note">${lastM ? `Última partida: ${esc(lastM.g.name)} · ${esc(lbl)} · ${R[lastM.result] ?? ''} · ${ago(lastM.t)}` : 'Nenhuma partida registrada ainda.'}</span></section>`;
 }
-function homeNextGoal() {
-  const ev = (state.goals || []).map(evalGoal).filter((e) => e.status !== 'nodata' && e.status !== 'done' && !state.hhide.includes(e.g.id));
-  if (!ev.length) return '';
-  const e = ev.reduce((a, b) => (b.remaining < a.remaining ? b : a));
-  return `<a class="ng gc" href="#/metas" style="--gc:${e.g.color}"><span class="pk">PRÓXIMA META</span><div class="ng-t">${icon(e.g.id, 22)}<b>${esc(e.g.name)} · ${esc(e.label)}</b></div><div class="ng-n"><span class="num">${nf.format(e.remaining)}</span><span>pontos para ${nf.format(e.goal.target)}</span></div><small>${nf.format(e.now)} → ${nf.format(e.goal.target)}</small></a>`;
-}
 function homeWeekGame() {
   const now = Date.now(), w = 7 * DAY;
   let best = null;
@@ -653,7 +647,13 @@ function homeRefresh() {
 function homeGoals() {
   const ev = (state.goals || []).map(evalGoal).filter((e) => e.status !== 'nodata' && !state.hhide.includes(e.g.id));
   if (!ev.length) return '';
-  return `<section class="panel"><div class="hd"><h2 style="font-size:18px">Metas</h2><a class="note" href="#/metas">ver todas</a></div>${ev.map((e) => `<div class="gline"><span>${icon(e.g.id, 16)} <span>${esc(e.g.name)} · ${esc(e.label)}<small>${nf.format(e.now)} → ${nf.format(e.goal.target)}</small></span></span><b style="color:${e.remaining > 0 ? 'var(--text)' : '#6EA8F5'}">${e.remaining > 0 ? 'faltam ' + nf.format(e.remaining) : '✓'}</b></div>`).join('')}</section>`;
+  const open = ev.filter((e) => e.status !== 'done');
+  const next = open.length ? open.reduce((a, b) => (b.remaining < a.remaining ? b : a)) : null;
+  const cards = ev.map((e) => {
+    const done = e.status === 'done';
+    return `<a class="ng gc" href="#/metas" style="--gc:${e.g.color}"><span class="pk">${done ? 'META ATINGIDA' : e === next ? 'PRÓXIMA META' : 'META'}</span><div class="ng-t">${icon(e.g.id, 22)}<b>${esc(e.g.name)} · ${esc(e.label)}</b></div><div class="ng-n"><span class="num">${done ? '✓' : nf.format(e.remaining)}</span><span>${done ? 'chegou em ' + nf.format(e.goal.target) : 'pontos para ' + nf.format(e.goal.target)}</span></div><small>${nf.format(e.now)} → ${nf.format(e.goal.target)}</small></a>`;
+  }).join('');
+  return `<section style="display:flex;flex-direction:column;gap:14px"><div class="hd2"><h2>Metas</h2><a class="note" href="#/metas">ver todas</a></div><div class="goalgrid">${cards}</div></section>`;
 }
 function homeHighlight() {
   const rows = homeRows().filter((r) => r.dl && r.pts.length > 1);

@@ -147,7 +147,8 @@ function home() {
     <section><h1>Minha evolução competitiva</h1><p class="lead">Todos os jogos ranqueados num só lugar, com histórico coletado automaticamente.</p></section>
     ${peakBanner()}
     ${homeControls()}
-    <section class="hscore">${homeScore()}<aside class="hside">${homeNextGoal()}${homeToday()}${weekly()}${homeGoals()}</aside></section>
+    <section class="hscore">${homeScore()}<aside class="hside">${homeToday()}${weekly()}</aside></section>
+    ${homeGoals()}
     <section class="hlrow">${homeHighlight()}${homeWeekGame()}</section>
     <section class="hrow">${homeFeed()}<div class="hrow-r">${combined()}</div></section>
     <p class="note">A página inicial mostra só os modos principais de cada jogo; os demais abrem em “Todos os modos”. Os destaques são editáveis em config/display.json.</p>
