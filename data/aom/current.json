@@ -1,7 +1,7 @@
 {
   "game": "aom",
   "ok": true,
-  "fetchedAt": "2026-11-25T21:43:55.312Z",
+  "fetchedAt": "2026-11-26T08:21:53.452Z",
   "player": {
     "name": "Oni.Forkxx",
     "id": "1073742995",
@@ -10,28 +10,28 @@
   },
   "modes": [
     {
-      "id": "1v1",
-      "label": "1v1 Supremacy",
-      "rating": 1399,
-      "peak": 1412,
-      "rank": 906,
-      "tier": null,
-      "wins": 179,
-      "losses": 171,
-      "draws": null,
-      "lastGameAt": "2026-09-11T03:50:05.000Z"
-    },
-    {
       "id": "team",
       "label": "Team Supremacy",
       "rating": 1379,
       "peak": 1427,
-      "rank": 831,
+      "rank": 830,
       "tier": null,
       "wins": 124,
       "losses": 93,
       "draws": null,
       "lastGameAt": "2026-10-02T21:52:01.000Z"
+    },
+    {
+      "id": "1v1",
+      "label": "1v1 Supremacy",
+      "rating": 1399,
+      "peak": 1412,
+      "rank": 910,
+      "tier": null,
+      "wins": 179,
+      "losses": 171,
+      "draws": null,
+      "lastGameAt": "2026-09-11T03:50:05.000Z"
     }
   ],
   "recent": [
