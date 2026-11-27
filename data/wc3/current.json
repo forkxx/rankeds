@@ -1,7 +1,7 @@
 {
   "game": "wc3",
   "ok": true,
-  "fetchedAt": "2026-11-27T08:37:44.224Z",
+  "fetchedAt": "2026-11-27T21:19:38.810Z",
   "player": {
     "name": "Forkxx",
     "id": "Forkxx#1480",
@@ -15,7 +15,7 @@
       "label": "1v1 Human",
       "rating": 1588,
       "peak": null,
-      "rank": 69,
+      "rank": 71,
       "tier": null,
       "wins": 24,
       "losses": 28,
@@ -45,7 +45,7 @@
       "label": "1v1 Night Elf",
       "rating": 1486,
       "peak": null,
-      "rank": 1,
+      "rank": 3,
       "tier": null,
       "wins": 16,
       "losses": 19,
