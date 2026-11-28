@@ -1,7 +1,7 @@
 {
   "game": "wc3",
   "ok": true,
-  "fetchedAt": "2026-11-27T21:19:38.810Z",
+  "fetchedAt": "2026-11-28T07:51:55.244Z",
   "player": {
     "name": "Forkxx",
     "id": "Forkxx#1480",
@@ -15,7 +15,7 @@
       "label": "1v1 Human",
       "rating": 1588,
       "peak": null,
-      "rank": 71,
+      "rank": 70,
       "tier": null,
       "wins": 24,
       "losses": 28,
@@ -30,7 +30,7 @@
       "label": "1v1 Orc",
       "rating": 1516,
       "peak": null,
-      "rank": 24,
+      "rank": 23,
       "tier": null,
       "wins": 31,
       "losses": 35,
@@ -45,7 +45,7 @@
       "label": "1v1 Night Elf",
       "rating": 1486,
       "peak": null,
-      "rank": 3,
+      "rank": 1,
       "tier": null,
       "wins": 16,
       "losses": 19,
@@ -68,7 +68,7 @@
       "lastGameAt": "2026-11-07T18:49:03.462Z",
       "season": 25,
       "stale": false,
-      "percentile": 20.2
+      "percentile": 20.3
     },
     {
       "id": "mini_dota",
@@ -83,7 +83,7 @@
       "lastGameAt": "2026-09-03T22:00:10.364Z",
       "season": 25,
       "stale": false,
-      "percentile": 10.6
+      "percentile": 10.9
     },
     {
       "id": "1v1_random",
